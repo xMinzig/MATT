@@ -41,6 +41,7 @@ $(function () {
     let interval;
     let enableLengths;
     let alignLabels = true;
+    let collapsedmap = {};
 
     // Gets the options initially
     getOptions();
@@ -397,6 +398,9 @@ $(function () {
             set_testing(xhr.getResponseHeader("Testing"));
         }
 
+
+
+
         // Enables the undo and redo buttons (depending on edge cases)
         if (counter_of_trees > 1) {
             $("#undo-button").prop("disabled", false);
@@ -417,11 +421,19 @@ $(function () {
 
         // Calls the draw function with the chosen tree (with or without branch lengths)
         if (typeof xhr !== "undefined" && xhr.getResponseHeader("Length")) {
+            data.forEach(n => {
+                collapsedmap[n["id"]] = {left: false, right: false};
+            });
             draw(JSON.parse(trees[counter_of_trees - 1][2]));
         } else {
+
             draw(JSON.parse(trees[counter_of_trees - 1][1]));
         }
+
+
     }
+
+
 
     /**
      * Enables or disables testing capabilities
@@ -662,7 +674,19 @@ $(function () {
      * @param data tree informations
      */
     function draw(data) {
+
+        //const collapsedmap = {};
+        if(Object.keys(collapsedmap).length === 0){
+            data.forEach(n => {
+            collapsedmap[n["id"]] = {left: false, right: false, left_id: null, right_id: null, label: "Collapsed",
+                "l-d": null,"r-d":null, "l_edge-Y": null, "r_edge-Y": null, "collapsed-line-Y":null,
+                "minimap-r-m": null, "minimap-l-m": null};
+            });
+        }
+
+
         $("#outgroup-button").css("display", "none");
+
 
         xBefore = getTransform("x");
         yBefore = getTransform("y");
@@ -726,6 +750,10 @@ $(function () {
         // Prepares groups for later use
         g = svg.g();
         lines = g.g();
+
+
+
+
 
         // Draws the frame around the tree
         g.add(svg.path("M0,0H" + maxX + "V" + maxY + "H0Z").attr({
@@ -896,6 +924,372 @@ $(function () {
             toggleOutgroupButton();
         }
 
+
+        /**
+         * Gets subtree of a givin node
+         * @param start clicked node
+         * @returns {*[]} Subtreelist with ids of the subnodes
+         */
+        function getTree(start){
+            const children = [];
+            const stack = [start]
+
+            while(stack.length > 0){
+                const a = stack.pop();
+                const node = data.find(n => n["id"] === a);
+                if(node == null) continue;
+                ["l_child","r_child"].forEach(child => {
+                    const childid = node[child];
+                    if(childid !== undefined && childid !== null){
+                        children.push(childid);
+                        stack.push(childid);
+                    }
+                });
+            }
+            return children.filter(elements => elements);
+        }
+
+
+        /**
+         * Collapse function. Collapses / Expands a node with the subtree
+         * @param childitem childnode (l_node / r_node)
+         * @param start startnode
+         * @param collapsed_check  check if tree at given node is collapsed or not
+         * @param direct direction of the node (right / left)
+         */
+        function collapse(childitem, start, collapsed_check, direct){
+            const sub = getTree(childitem);
+            //MERGE TREES IF ONE IS ALREADY COLLAPSED
+            const parent = data.find(d => d["id"] === start);
+            let side;
+
+            if(direct === "right") side = "r_child";
+            if(direct === "left") side = "l_child";
+            const child = parent[side];
+            if(child === null) return;
+
+            //'GRANDPARENT' Problem fix => remove lines && custom label
+            const temp = getTree(child);
+            temp.push(child);
+            temp.forEach(id =>{
+                const clean_lines  =svg.selectAll(`[data-collapsed-Line^='${id}']`);
+                if(clean_lines !== null) clean_lines.forEach(i => i.remove());
+            });
+            const currentcollapsed = svg.select(`[data-collapsed-Line^='${child}']`);
+
+            if(currentcollapsed !== null){
+                svg.selectAll(`[data-collapsed-Line^='${child}']`).remove()
+                const childsub = getTree(child);
+                childsub.forEach(c => {
+                         //MERGE: Push all c elements to subtree
+                          if(!sub.includes(c)) sub.push(c);
+                     });
+            }
+            //Resets state for concat collapse
+            const temptree = getTree(start);
+                temptree.forEach(childitem => {
+                    if(collapsedmap[childitem]){
+                        collapsedmap[childitem]["left"] = false;
+                        collapsedmap[childitem]["right"] = false;
+                    }
+                });
+
+            // COLAPSE
+            if(collapsed_check){
+                svg.selectAll(`circle[data-id='${childitem}']`).attr({display: "none"});
+                minimap.selectAll(`path[data-id='${childitem}']`).attr({display: "none"});
+                sub.forEach(child => {
+                    svg.selectAll(`[data-id='${child}']`).attr({display: "none"});
+                    svg.selectAll(`circle[data-id='${child}']`).attr({display: "none"});
+                    minimap.selectAll(`path[data-id='${child}']`).attr({display: "none"});
+                });
+
+
+                draw_collapsed_line(childitem, start, collapsed_check, direct);
+                updateSpacing(start, collapsed_check, direct);
+
+
+            //EXPAND
+            }else{
+                svg.selectAll(`circle[data-id='${childitem}']`).attr({display: "inline"});
+                minimap.selectAll(`path[data-id='${childitem}']`).attr({display: "inline"});
+                sub.forEach(child => {
+                    svg.selectAll(`[data-id='${child}']`).attr({display: "inline"});
+                    svg.selectAll(`circle[data-id='${child}']`).attr({display: "inline"});
+                    minimap.selectAll(`path[data-id='${child}']`).attr({display: "inline"});
+
+
+                });
+
+                const temp = getTree(start);
+                temp.forEach(child => {
+                    if(collapsedmap[child]["l-d"]) svg.select(`path[data-id='${collapsedmap[child]["left_id"]}']`).attr({d: collapsedmap[child]["l-d"]});
+                    if(collapsedmap[child]["r-d"]) svg.select(`path[data-id='${collapsedmap[child]["right_id"]}']`).attr({d: collapsedmap[child]["r-d"]});
+                    if(collapsedmap[child]["l_edge-Y"]) svg.select(`circle[data-id='${child}'][data-direct='left']`).attr({cy: collapsedmap[child]["l_edge-Y"], "data-v":collapsedmap[child]["l_edge-Y"]});
+                    if(collapsedmap[child]["r_edge-Y"]) svg.select(`circle[data-id='${child}'][data-direct='right']`).attr({cy: collapsedmap[child]["r_edge-Y"], "data-v":collapsedmap[child]["r_edge-Y"]});
+                });
+
+                draw_collapsed_line(childitem, start, collapsed_check, direct);
+                updateSpacing(start, collapsed_check, direct);
+                console.log(collapsedmap)
+
+            }
+        }
+
+        /**
+         * Draws collapsed related stuff.
+         * @param childitem childnode (l_node / r_node)
+         * @param start startnode
+         * @param collapsed_check  check if tree at given node is collapsed or not
+         * @param direct direction of the node (right / left)
+         */
+        function draw_collapsed_line(childitem, start, collapsed_check, direct){
+
+            const circle = svg.select(`circle[data-id='${start}'][data-direct='${direct}']`);
+            const sub = getTree(childitem);
+            const item_counter = sub.filter(id => {
+                const n = data.find(d => d["id"] === id);
+                return n["name"] !== "None";
+            }).length;
+
+            const item_name_container = sub.
+            map(id=>data.find(d => d["id"] === id)).
+            filter(n => n["name"] !== "None").
+            map(n => n["name"]);
+            const preview_containing = item_name_container.slice(0,10).join(", ");
+
+            let coll_line = null;
+            let nameText = null;
+
+            if(collapsed_check){
+                nameText = svg.text(maxX - offset,  circle.attr("data-v"), "'"+collapsedmap[start]["label"]+"'"+ " (" + item_counter+ ")").attr({
+                    dominantBaseline: 'middle',
+                    fontSize: fontSize,
+                    fill: "black",
+                    display: "inline",
+                    "data-collapsed-Line": `${start}-${direct}`,
+                    textAnchor: 'end',
+                    fontStyle: "italic"
+                });
+                g.add(nameText);
+
+                coll_line = svg.line(circle.attr("data-h"), circle.attr("data-v"), maxX - (1.5 * offset) - Math.ceil(nameText.getBBox().width), circle.attr("data-v")).attr({
+                    stroke: "black",
+                    display: "inline",
+                    "data-collapsed-Line": `${start}-${direct}`,
+                    strokeWidth: 2,
+                });
+                g.add(coll_line);
+
+                //TODO: Draw line for collapsed.
+
+               // coll_minimap_line = minimap.line();
+
+                nameText.hover(
+                    function (){
+                        this.node.style.cursor = "pointer";
+                        this.attr({fill:"#1e90ff"});
+                        const box = this.getBBox();
+                        let text;
+                        if(item_counter <= 10) {
+                            text = svg.text(box.x + box.width + 10, box.y + box.height / 2,
+                                "'"+collapsedmap[start]["label"]+"' "+"contains  "+item_counter+" taxa:  "  + preview_containing + ", ... ( 0 More )" ).attr({
+                                fill: "#171515",
+                                "collapse-hover-id": start
+                            });
+
+                        }else if(item_counter > 10){
+                            text = svg.text(box.x + box.width + 10, box.y + box.height / 2,
+                                "'"+collapsedmap[start]["label"]+"' "+"contains "+item_counter+" taxa:  " + preview_containing + ", ... ( "+ (item_counter-10)+ " More )" ).attr({
+                                fill: "#171515",
+                                "collapse-hover-id": start
+                            });
+
+                        }
+                        const textbox = text.getBBox();
+                        const desc = svg.rect(textbox.x - 5, textbox.y-3,textbox.width+80, textbox.height+25,5,5).attr({
+                            strokeWidth: 0.5,
+                            fill: "#bdbdbd",
+                            stroke: "black",
+                            "collapse-hover-id": start
+                        });
+
+                        g.add(desc);
+                        g.add(text);
+
+                    },
+                    function (){
+                        this.node.style.cursor = "default";
+                        this.attr({fill:"#000000"});
+                        svg.selectAll(`[collapse-hover-id='${start}']`).remove();
+                    }
+                );
+
+                //UPDATE NAMETAG IF NAME CHANGED
+                nameText.click(function () {
+                    const box = this.getBBox();
+                    const ctm = this.node.getScreenCTM();
+                    const point = svg.node.createSVGPoint();
+                    point.x = box.x;
+                    point.y = box.y;
+                    const spoint = point.matrixTransform(ctm);
+                    const input = document.createElement("input");
+                    input.classList.add("svg-edit-input");
+                    input["type"] = "text";
+                    input["value"] = "New label(Not empty)";
+                    input["style"]["position"] = "absolute";
+                    input["style"]["left"] = `${spoint.x}px`;
+                    input["style"]["top"] = `${spoint.y}px`;
+                    document.body.append(input);
+                    input.focus();
+
+                    input.addEventListener("keydown", e=>{
+                        if(e.key === "Enter"){
+                            if(input["value"] !== ""){
+                                const newtext = input["value"];
+                                collapsedmap[start]["label"] = newtext;
+                                this.attr({
+                                    text: "\""+newtext+"\"" + "("+item_counter+")",
+                                    fontStyle: "italic"
+                                })
+                                const newlinelength = Math.ceil(nameText.getBBox().width);
+                                coll_line.attr({
+                                    x2: maxX - (1.5 * offset) - newlinelength
+                                });
+                                input.remove();
+                            }
+                        }
+                    });
+
+                });
+            }else{
+                svg.selectAll(`[data-collapsed-Line='${start}-${direct}']`).remove()
+            }
+        }
+
+        /**
+         * Updates the spacing after collapse
+         * @param start startnode
+         * @param collapsed_check collapse check (true/false) at certain node
+         * @param direct (direction: left/right)
+         */
+        function updateSpacing(start, collapsed_check, direct){
+
+            const node = data.find(d=> d["id"] === start);
+
+            let child;
+            if(direct === "left") child = node["l_child"];
+            if(direct === "right") child = node["r_child"];
+            if(!child) return;
+
+            const path = svg.select(`path[data-id='${child}']`);
+            if(!path) return;
+
+            let directKey;
+            if(direct === "left")directKey = "l-d";
+            if(direct === "right")directKey = "r-d";
+
+
+            if(!collapsedmap[start][directKey]) collapsedmap[start][directKey] = path.attr("d");
+
+            //TODO: Write this nicer and better
+            if(collapsed_check){
+                let minimapD;
+                const pathComponents = path.attr("d").split(/[MHV]/).filter(x => x.trim() !== "");
+                const mX = parseFloat(pathComponents[0].split(",")[0]);
+                const mY = parseFloat(pathComponents[0].split(",")[1]);
+                const hX = parseFloat(pathComponents[2]);
+
+                let newVY;
+                if(direct === "left"){
+                    newVY = mY-25;
+                    minimapD = collapsedmap[start]["minimap-l-m"];
+                }
+                if(direct === "right"){
+                    newVY = mY+25;
+                    minimapD = collapsedmap[start]["minimap-r-m"];
+                }
+
+                const minimapAttributes = minimapD.split(/[MHV]/).filter(x => x.trim() !== "");
+                const miniDX = parseFloat(minimapAttributes[0].split(",")[0]);
+                const miniDY = parseFloat(minimapAttributes[0].split(",")[1]);
+                const miniDhx = parseFloat(minimapAttributes[2]);
+                let newMiniY ;
+                let minimapPath;
+
+
+                if(direct === "left"){
+                    minimapPath = minimap.select(`path[data-child='${child}']`);
+                    path.attr({d: `M${mX},${mY} V${newVY} H${hX}`});
+                    newMiniY = miniDY - 7;
+                    minimapPath.attr({d:`M${miniDX},${miniDY} V${newMiniY} H${miniDhx}`});
+                }
+                if(direct === "right") {
+                    minimapPath = minimap.select(`path[data-child='${child}']`);
+                    path.attr({d: `M${mX},${mY} V${newVY} H${hX}`});
+                    newMiniY = miniDY + 7;
+                    minimapPath.attr({d:`M${miniDX},${miniDY} V${newMiniY} H${miniDhx}`});
+                }
+                const collapsedItems = svg.selectAll(`[data-collapsed-Line='${start}-${direct}']`);
+                const circle = svg.select(`circle[data-id='${start}'][data-direct='${direct}']`);
+
+                collapsedItems.forEach(item =>{
+                    const t = item.type;
+
+                    if(t === "text"){
+                        item.attr({y: newVY});
+                    }
+                    if(t === "line"){
+                        item.attr({y1: newVY, y2:newVY});
+                    }
+                });
+
+                if(direct === "left")collapsedmap[start]["l_edge-Y"] = circle.attr("data-v");
+                if(direct === "right") collapsedmap[start]["r_edge-Y"] = circle.attr("data-v");
+
+
+                circle.attr({cy: newVY, "data-v":newVY});
+
+            }else{
+                path.attr({d: collapsedmap[start][directKey]});
+                const collapsedItems = svg.selectAll(`[data-collapsed-Line='${start}-${direct}']`);
+                const circle = svg.select(`circle[data-id='${start}'][data-direct='${direct}']`);
+                let minimapPath;
+
+                collapsedItems.forEach(item =>{
+                    const t = item.type;
+                    if(t === "text"){
+                        item.attr({y: collapsedmap[start]["collapsed-line-Y"]});
+                    }
+                    if(t === "line"){
+                        item.attr({y1: collapsedmap[start]["collapsed-line-Y"], y2:collapsedmap[start]["collapsed-line-Y"]});
+                    }
+                });
+
+                let oldCircleY;
+                let oldMinimapD;
+                if(direct === "left"){
+                   minimapPath = minimap.select(`path[data-child='${child}']`);
+
+                   oldCircleY = collapsedmap[start]["l_edge-Y"];
+                   oldMinimapD = collapsedmap[start]["minimap-l-m"];
+                }
+                if(direct === "right"){
+                  minimapPath = minimap.select(`path[data-child='${child}']`);
+
+                  oldCircleY = collapsedmap[start]["r_edge-Y"];
+                  oldMinimapD = collapsedmap[start]["minimap-r-m"];
+                }
+
+                circle.attr({cy: oldCircleY, "data-v":oldCircleY});
+                minimapPath.attr({d: oldMinimapD});
+
+            }
+
+
+        }
+
+
         // Draws the branches and texts
         data.forEach(function (item, index, array) {
             // Text
@@ -903,7 +1297,6 @@ $(function () {
                 // TODO draw all texts at the right
                 // with path stroke dasharray
                 //g.add(svg.text(item["total_length"] * scaleX + (1.5 * offset), (index + 1) * scaleY, item["name"]).attr({dominantBaseline: 'middle', fontSize: fontSize, 'data-id': item["id"]}));
-
                 // Draw at the far right with a dashed line
                 if (alignLabels) {
                     nameText = svg.text(maxX - offset, (index + 1) * scaleY, item["name"]).attr({
@@ -918,7 +1311,8 @@ $(function () {
                             fill: 'none',
                             stroke: 'black',
                             strokeWidth: 2,
-                            strokeDasharray: 4
+                            strokeDasharray: 4,
+                            "data-id": item["id"]
                         }));
                     }
                 // Draw next to the leaf without a dashed line
@@ -930,6 +1324,7 @@ $(function () {
                     });
                     g.add(nameText);
                 }
+
             // Branch
             } else {
                 // Draw bootstrap on the line if provided
@@ -971,7 +1366,92 @@ $(function () {
                     "data-id": array[r_child]["id"],
                     "data-parent": item["id"]
                 });
+
                 g.add(left, right);
+
+                 left.hover(
+                    function () {
+                        console.log(item["id"])
+                }, function () {
+
+                });
+
+                      right.hover(
+                    function () {
+                        console.log(item["id"])
+                }, function () {
+
+                });
+
+
+
+                // NODE FOR COLLAPSE / SIMPLIFICATION
+                const r_edge = svg.circle(hRight, vRight, 8).attr({
+                    fill: "black",
+                    stroke: "black",
+                    strokeWidth: 2,
+                    "data-id": item["id"],
+                    "data-h": hRight,
+                    "data-v": vRight,
+                    "data-direct": "right",
+                });
+
+                // NODE FOR COLLAPSE / SIMPLIFICATION
+                const l_edge = svg.circle(hLeft, vLeft, 8).attr({
+                    fill: "black",
+                    stroke: "black",
+                    strokeWidth: 2,
+                    "data-id": item["id"],
+                    "data-h": hLeft,
+                    "data-v": vLeft,
+                    "data-direct": "left",
+                });
+
+                l_edge.hover(
+                    function () {
+                        this.node.style.cursor = "pointer";
+                        console.log(item["id"])
+                }, function () {
+                        this.node.style.cursor = "default";
+                });
+                r_edge.hover(
+                    function () {
+                        this.node.style.cursor = "pointer";
+                        console.log(item["id"])
+
+                }, function () {
+                        this.node.style.cursor = "default";
+
+                });
+
+                // Leave isn't leave => check one stage before and delete nodes
+                const r_child_check = data.find(d => d["id"] === item["r_child"]);
+                const l_child_check = data.find(d => d["id"] === item["l_child"]);
+
+
+                r_edge.click(function(){
+                    document.querySelectorAll(".svg-edit-input").forEach(e => e.remove());
+                    collapsedmap[item["id"]]["collapsed-line-Y"] = r_edge.attr("data-v");
+                    collapse(item["r_child"],item["id"], !collapsedmap[item["id"]]["right"], "right");
+                    collapsedmap[item["id"]]["right"] = !collapsedmap[item["id"]]["right"];
+                    collapsedmap[item["id"]]["right_id"] = item["r_child"];
+
+                });
+                l_edge.click(function(){
+                    document.querySelectorAll(".svg-edit-input").forEach(e => e.remove());
+                    collapsedmap[item["id"]]["collapsed-line-Y"] = l_edge.attr("data-v");
+                    collapse(item["l_child"],item["id"], !collapsedmap[item["id"]]["left"], "left");
+                    collapsedmap[item["id"]]["left"] = !collapsedmap[item["id"]]["left"];
+                    collapsedmap[item["id"]]["left_id"] = item["l_child"];
+
+                });
+                g.add(r_edge, l_edge);
+
+
+                //Removing false leaves
+                if(r_child_check["name"] !== "None") r_edge.remove();
+                if(l_child_check["name"] !== "None") l_edge.remove();
+
 
                 // Repeat almost everything for the minimap
                 mXMinimap = minimapMinX + mX / ratio;
@@ -987,13 +1467,25 @@ $(function () {
                 minimapPaths = [minimapLeft, minimapRight];
 
                 minimapPaths.forEach(function (itemMinimapPath, indexMinimapPath, arrayMinimapPath) {
+
+                    if(indexMinimapPath === 0) collapsedmap[item["id"]]["minimap-l-m"] = itemMinimapPath.attr("d");
+                    if(indexMinimapPath === 1) collapsedmap[item["id"]]["minimap-r-m"] = itemMinimapPath.attr("d");
+                    let data_child;
+                    if(indexMinimapPath === 0) data_child = item["l_child"];
+                    if(indexMinimapPath === 1) data_child = item["r_child"];
+
+
                     itemMinimapPath.attr({
                         fill: 'none',
                         stroke: 'black',
                         strokeWidth: strokeWidth / ratio,
-                        strokeLinecap: 'square'
+                        strokeLinecap: 'square',
+                        "data-id": item["id"],
+                        "data-child": data_child // r or l child
+
                     });
                 });
+
 
                 if (array[l_child]["bootstrap"] != "") {
                     left.append(Snap.parse('<title>' + array[l_child]["bootstrap"] + '</title>'));
@@ -1014,7 +1506,6 @@ $(function () {
                         "data-r_child": array[r_child]["r_child"]
                     });
                 }
-
                 // Configure path hovering and clicking
                 paths = [left, right];
 
@@ -1057,6 +1548,7 @@ $(function () {
                             itemPath.attr({
                                 strokeOpacity: 0.25
                             });
+
                             childrenIds = [itemPath.attr("data-l_child"), itemPath.attr("data-r_child")];
                             while ((typeof childrenIds !== "undefined") && (childrenIds.length > 0)) {
                                 childId = childrenIds.shift();
@@ -1117,12 +1609,17 @@ $(function () {
                         } else {
                             // Send data to the backend either with the last tree
                             if (counter_of_trees == number_of_trees) {
+
+
                                 load("get", {
                                     'from': clickedPath.attr("data-id"),
                                     'to': itemPath.attr("data-id")
                                 });
                                 clicked_id = null;
                                 clickedPath = null;
+
+
+
                             // or with the currently shown tree
                             } else {
                                 load("get", {
@@ -1139,6 +1636,95 @@ $(function () {
                 });
             }
         });
+
+
+    Object.keys(collapsedmap).forEach(id => {
+        document.querySelectorAll(".svg-edit-input").forEach(e => e.remove());
+        const node = data.find(d => d["id"] === id);
+        if(node === null) return;
+
+        collapsedmap[id]["l-d"] = null;
+        collapsedmap[id]["r-d"] = null;
+        collapsedmap[id]["l_edge-Y"] = null;
+        collapsedmap[id]["r_edge-Y"] = null;
+        collapsedmap[id]["collapsed-line-Y"] = null;
+
+        //SIDE SWAP CHECK IF STATEMENTS AFTER BRANCH SWAP
+        if(collapsedmap[id]["right"] && collapsedmap[id]["right_id"] !== null){
+            if(node["r_child"] !== collapsedmap[id]["right_id"]){
+                if(node["l_child"] === collapsedmap[id]["right_id"]){
+                    collapsedmap[id]["left"] = true;
+                    collapsedmap[id]["right"] = false;
+                    collapsedmap[id]["left_id"] = collapsedmap[id]["right_id"];
+                    collapsedmap[id]["right_id"] = null;
+                }else{
+                    collapsedmap[id]["right_id"] = null;
+                    collapsedmap[id]["right"] = false;
+                }
+            }
+        }
+        if(collapsedmap[id]["left"] && collapsedmap[id]["left_id"] !== null){
+            if(node["l_child"] !== collapsedmap[id]["left_id"]){
+                if(node["r_child"] === collapsedmap[id]["left_id"]){
+                    collapsedmap[id]["right"] = true;
+                    collapsedmap[id]["left"] = false;
+                    collapsedmap[id]["right_id"] = collapsedmap[id]["left_id"];
+                    collapsedmap[id]["left_id"] = null;
+                    collapsedmap[id]["minimap-l-m"] = null;
+                }else{
+                    collapsedmap[id]["left_id"] = null;
+                    collapsedmap[id]["left"] = false;
+                    collapsedmap[id]["minimap-l-m"] = null;
+                }
+            }
+        }
+        //TODO: Check if this code is still necessary (this was a hotfix)
+
+
+        if(collapsedmap[id]["right"] && collapsedmap[id]["right_id"]){
+            const child = collapsedmap[id]["right_id"];
+            const path = svg.select(`path[data-id='${child}']`);
+            if(path) collapsedmap[id]["r-d"] = path.attr("d");
+            const tree = getTree(id);
+            tree.forEach(children =>{
+                if(collapsedmap[children]["r-d"]){
+                    const rightpath_id = collapsedmap[children]["right_id"];
+                    const children_path = svg.select(`path[data-id='${rightpath_id}']`);
+                    collapsedmap[children]["r-d"] = children_path.attr("d");
+                }else if(collapsedmap[children]["l-d"]){
+                    const leftpath_id = collapsedmap[children]["left_id"];
+                    const children_path = svg.select(`path[data-id='${leftpath_id}']`);
+                    collapsedmap[children]["l-d"] = children_path.attr("d");
+                }
+
+            });
+        }
+        if(collapsedmap[id]["left"] && collapsedmap[id]["left_id"]){
+            const child = collapsedmap[id]["left_id"];
+            const path = svg.select(`path[data-id='${child}']`);
+            if(path) collapsedmap[id]["l-d"] = path.attr("d");
+            const tree = getTree(id);
+            tree.forEach(children =>{
+                if(collapsedmap[children]["r-d"]){
+                    const rightpath_id = collapsedmap[children]["right_id"];
+                    const children_path = svg.select(`path[data-id='${rightpath_id}']`);
+                    collapsedmap[children]["r-d"] = children_path.attr("d");
+                }else if(collapsedmap[children]["l-d"]){
+                    const leftpath_id = collapsedmap[children]["left_id"];
+                    const children_path = svg.select(`path[data-id='${leftpath_id}']`);
+                    collapsedmap[children]["l-d"] = children_path.attr("d");
+                }
+            });
+        }
+        if(collapsedmap[id]["right"]){
+            collapse(node["r_child"], id ,collapsedmap[id]["right"], "right");
+        }
+        if(collapsedmap[id]["left"]){
+            collapse(node["l_child"], id ,collapsedmap[id]["left"], "left");
+        }
+    });
+
+
 
         // Sets the initial position
         if (typeof xBefore === "undefined") {
@@ -1321,6 +1907,8 @@ $(function () {
             }
         }
 
+
+
         $(svg.node).mousedown(funcMouseDown);
         $(svg.node).mouseup(funcMouseUp);
         $(svg.node).mousemove(funcMouseMove);
@@ -1434,10 +2022,12 @@ $(function () {
 
                 // Calls the search function with input from the search field for button and context option
                 $("#search-button").click(function (event) {
+                    document.querySelectorAll(".svg-edit-input").forEach(e => e.remove());
                     search($("#search-text").val());
                 });
 
                 $('#search-text').keypress(function (event) {
+                    document.querySelectorAll(".svg-edit-input").forEach(e => e.remove());
                     if (event.which == '13') {
                         search($("#search-text").val());
                     }
@@ -1508,6 +2098,7 @@ $(function () {
         function undo() {
             if (counter_of_trees > 1) {
                 counter_of_trees -= 1;
+
             }
             if (counter_of_trees == 1) {
                 $("#undo-button").prop("disabled", true);
@@ -1627,7 +2218,11 @@ $(function () {
                 $("#context-menu").removeClass("visible");
             }
         });
+
+
     }
+
+
 
     /**
      * Enables the custom buttons for alignment file handling
