@@ -421,9 +421,6 @@ $(function () {
 
         // Calls the draw function with the chosen tree (with or without branch lengths)
         if (typeof xhr !== "undefined" && xhr.getResponseHeader("Length")) {
-            data.forEach(n => {
-                collapsedmap[n["id"]] = {left: false, right: false};
-            });
             draw(JSON.parse(trees[counter_of_trees - 1][2]));
         } else {
 
@@ -959,7 +956,6 @@ $(function () {
          */
         function collapse(childitem, start, collapsed_check, direct){
             const sub = getTree(childitem);
-            //MERGE TREES IF ONE IS ALREADY COLLAPSED
             const parent = data.find(d => d["id"] === start);
             let side;
 
@@ -987,12 +983,12 @@ $(function () {
             }
             //Resets state for concat collapse
             const temptree = getTree(start);
-                temptree.forEach(childitem => {
-                    if(collapsedmap[childitem]){
-                        collapsedmap[childitem]["left"] = false;
-                        collapsedmap[childitem]["right"] = false;
-                    }
-                });
+            temptree.forEach(ci => {
+                if(collapsedmap[ci]){
+                    collapsedmap[ci]["left"] = false;
+                    collapsedmap[ci]["right"] = false;
+                }
+            });
 
             // COLAPSE
             if(collapsed_check){
@@ -1009,6 +1005,7 @@ $(function () {
                 updateSpacing(start, collapsed_check, direct);
 
 
+
             //EXPAND
             }else{
                 svg.selectAll(`circle[data-id='${childitem}']`).attr({display: "inline"});
@@ -1017,7 +1014,6 @@ $(function () {
                     svg.selectAll(`[data-id='${child}']`).attr({display: "inline"});
                     svg.selectAll(`circle[data-id='${child}']`).attr({display: "inline"});
                     minimap.selectAll(`path[data-id='${child}']`).attr({display: "inline"});
-
 
                 });
 
@@ -1028,10 +1024,13 @@ $(function () {
                     if(collapsedmap[child]["l_edge-Y"]) svg.select(`circle[data-id='${child}'][data-direct='left']`).attr({cy: collapsedmap[child]["l_edge-Y"], "data-v":collapsedmap[child]["l_edge-Y"]});
                     if(collapsedmap[child]["r_edge-Y"]) svg.select(`circle[data-id='${child}'][data-direct='right']`).attr({cy: collapsedmap[child]["r_edge-Y"], "data-v":collapsedmap[child]["r_edge-Y"]});
                 });
+                getTree(start).forEach(child=>{
+                    if(collapsedmap[child]["r-d"]) minimap.select(`path[data-child='${collapsedmap[child]["right_id"]}`).attr({d: collapsedmap[child]["minimap-r-m"]});
+                    if(collapsedmap[child]["l-d"]) minimap.select(`path[data-child='${collapsedmap[child]["left_id"]}']`).attr({d: collapsedmap[child]["minimap-r-m"]});
+                });
 
                 draw_collapsed_line(childitem, start, collapsed_check, direct);
                 updateSpacing(start, collapsed_check, direct);
-                console.log(collapsedmap)
 
             }
         }
@@ -1369,20 +1368,6 @@ $(function () {
 
                 g.add(left, right);
 
-                 left.hover(
-                    function () {
-                        console.log(item["id"])
-                }, function () {
-
-                });
-
-                      right.hover(
-                    function () {
-                        console.log(item["id"])
-                }, function () {
-
-                });
-
 
 
                 // NODE FOR COLLAPSE / SIMPLIFICATION
@@ -1410,14 +1395,14 @@ $(function () {
                 l_edge.hover(
                     function () {
                         this.node.style.cursor = "pointer";
-                        console.log(item["id"])
+
                 }, function () {
                         this.node.style.cursor = "default";
                 });
                 r_edge.hover(
                     function () {
                         this.node.style.cursor = "pointer";
-                        console.log(item["id"])
+
 
                 }, function () {
                         this.node.style.cursor = "default";
@@ -1465,6 +1450,8 @@ $(function () {
                 minimapRight = minimap.path("M" + mXMinimap + "," + mYRightMinimap + "V" + vRightMinimap + "H" + hRightMinimap);
 
                 minimapPaths = [minimapLeft, minimapRight];
+
+
 
                 minimapPaths.forEach(function (itemMinimapPath, indexMinimapPath, arrayMinimapPath) {
 
