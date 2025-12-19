@@ -982,12 +982,20 @@ $(function () {
                      });
             }
             //Resets state for concat collapse
-            const temptree = getTree(start);
+            const temptree = getTree(child);
+            temptree.push(parent[side])
+
             temptree.forEach(ci => {
-                if(collapsedmap[ci]){
+                if(collapsedmap[ci]["left"]){
                     collapsedmap[ci]["left"] = false;
-                    collapsedmap[ci]["right"] = false;
+                    svg.selectAll(`[data-id='${ci}']`).attr({stroke: "red"});
                 }
+                if(collapsedmap[ci]["right"]){
+                    collapsedmap[ci]["right"] = false;
+                    svg.selectAll(`[data-id='${ci}']`).attr({stroke: "red"});
+
+                }
+
             });
 
             // COLAPSE
@@ -1000,10 +1008,8 @@ $(function () {
                     minimap.selectAll(`path[data-id='${child}']`).attr({display: "none"});
                 });
 
-
                 draw_collapsed_line(childitem, start, collapsed_check, direct);
                 updateSpacing(start, collapsed_check, direct);
-
 
 
             //EXPAND
@@ -1016,18 +1022,16 @@ $(function () {
                     minimap.selectAll(`path[data-id='${child}']`).attr({display: "inline"});
 
                 });
+               //TODO: FIX SPACING: DRAWING WRONG BUT STATES ARE CORRECT
+              getTree(start).forEach(child => {
+                  if(collapsedmap[child]["l-d"]) svg.select(`path[data-id='${collapsedmap[child]["left_id"]}']`).attr({d: collapsedmap[child]["l-d"], stroke: "red"});
+                  if(collapsedmap[child]["r-d"]) svg.select(`path[data-id='${collapsedmap[child]["right_id"]}']`).attr({d: collapsedmap[child]["r-d"], stroke: "red"});
+                  if(collapsedmap[child]["l_edge-Y"]) svg.select(`circle[data-id='${child}'][data-direct='left']`).attr({cy: collapsedmap[child]["l_edge-Y"], "data-v":collapsedmap[child]["l_edge-Y"]});
+                  if(collapsedmap[child]["r_edge-Y"]) svg.select(`circle[data-id='${child}'][data-direct='right']`).attr({cy: collapsedmap[child]["r_edge-Y"], "data-v":collapsedmap[child]["r_edge-Y"]});
+                  if(collapsedmap[child]["r-d"]) minimap.select(`path[data-child='${collapsedmap[child]["right_id"]}`).attr({d: collapsedmap[child]["minimap-r-m"]});
+                  if(collapsedmap[child]["l-d"]) minimap.select(`path[data-child='${collapsedmap[child]["left_id"]}']`).attr({d: collapsedmap[child]["minimap-r-m"]});
+              });
 
-                const temp = getTree(start);
-                temp.forEach(child => {
-                    if(collapsedmap[child]["l-d"]) svg.select(`path[data-id='${collapsedmap[child]["left_id"]}']`).attr({d: collapsedmap[child]["l-d"]});
-                    if(collapsedmap[child]["r-d"]) svg.select(`path[data-id='${collapsedmap[child]["right_id"]}']`).attr({d: collapsedmap[child]["r-d"]});
-                    if(collapsedmap[child]["l_edge-Y"]) svg.select(`circle[data-id='${child}'][data-direct='left']`).attr({cy: collapsedmap[child]["l_edge-Y"], "data-v":collapsedmap[child]["l_edge-Y"]});
-                    if(collapsedmap[child]["r_edge-Y"]) svg.select(`circle[data-id='${child}'][data-direct='right']`).attr({cy: collapsedmap[child]["r_edge-Y"], "data-v":collapsedmap[child]["r_edge-Y"]});
-                });
-                getTree(start).forEach(child=>{
-                    if(collapsedmap[child]["r-d"]) minimap.select(`path[data-child='${collapsedmap[child]["right_id"]}`).attr({d: collapsedmap[child]["minimap-r-m"]});
-                    if(collapsedmap[child]["l-d"]) minimap.select(`path[data-child='${collapsedmap[child]["left_id"]}']`).attr({d: collapsedmap[child]["minimap-r-m"]});
-                });
 
                 draw_collapsed_line(childitem, start, collapsed_check, direct);
                 updateSpacing(start, collapsed_check, direct);
