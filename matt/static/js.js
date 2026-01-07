@@ -1022,7 +1022,7 @@ $(function () {
                     if(collapsedmap[child]["l_edge-Y"]) svg.select(`circle[data-id='${child}'][data-direct='left']`).attr({cy: collapsedmap[child]["l_edge-Y"], "data-v":collapsedmap[child]["l_edge-Y"]});
                     if(collapsedmap[child]["r_edge-Y"]) svg.select(`circle[data-id='${child}'][data-direct='right']`).attr({cy: collapsedmap[child]["r_edge-Y"], "data-v":collapsedmap[child]["r_edge-Y"]});
                     if(collapsedmap[child]["r-d"]) minimap.select(`path[data-child='${collapsedmap[child]["right_id"]}`).attr({d: collapsedmap[child]["minimap-r-m"]});
-                    if(collapsedmap[child]["l-d"]) minimap.select(`path[data-child='${collapsedmap[child]["left_id"]}']`).attr({d: collapsedmap[child]["minimap-r-m"]});
+                    if(collapsedmap[child]["l-d"]) minimap.select(`path[data-child='${collapsedmap[child]["left_id"]}']`).attr({d: collapsedmap[child]["minimap-l-m"]});
                 });
 
 
