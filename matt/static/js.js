@@ -990,7 +990,7 @@ $(function () {
                 if(collapsedmap[ci]["right"]) collapsedmap[ci]["right"] = false;
             });
 
-            // COLAPSE
+            // COLAPSE //TODO: Fix minimap stacked collapse bug
             if(collapsed_check){
                 svg.selectAll(`circle[data-id='${childitem}']`).attr({display: "none"});
                 minimap.selectAll(`path[data-id='${childitem}']`).attr({display: "none"});
@@ -1017,8 +1017,8 @@ $(function () {
                 const temptree = getTree(child);
                 temptree.push(parent[side]);
                 temptree.forEach(child => {
-                    if(collapsedmap[child]["l-d"]) svg.select(`path[data-id='${collapsedmap[child]["left_id"]}']`).attr({d: collapsedmap[child]["l-d"], stroke: "red"});
-                    if(collapsedmap[child]["r-d"]) svg.select(`path[data-id='${collapsedmap[child]["right_id"]}']`).attr({d: collapsedmap[child]["r-d"], stroke: "red"});
+                    if(collapsedmap[child]["l-d"]) svg.select(`path[data-id='${collapsedmap[child]["left_id"]}']`).attr({d: collapsedmap[child]["l-d"]});
+                    if(collapsedmap[child]["r-d"]) svg.select(`path[data-id='${collapsedmap[child]["right_id"]}']`).attr({d: collapsedmap[child]["r-d"]});
                     if(collapsedmap[child]["l_edge-Y"]) svg.select(`circle[data-id='${child}'][data-direct='left']`).attr({cy: collapsedmap[child]["l_edge-Y"], "data-v":collapsedmap[child]["l_edge-Y"]});
                     if(collapsedmap[child]["r_edge-Y"]) svg.select(`circle[data-id='${child}'][data-direct='right']`).attr({cy: collapsedmap[child]["r_edge-Y"], "data-v":collapsedmap[child]["r_edge-Y"]});
                     if(collapsedmap[child]["r-d"]) minimap.select(`path[data-child='${collapsedmap[child]["right_id"]}`).attr({d: collapsedmap[child]["minimap-r-m"]});
@@ -1174,16 +1174,19 @@ $(function () {
             const node = data.find(d=> d["id"] === start);
 
             let child;
-            if(direct === "left") child = node["l_child"];
-            if(direct === "right") child = node["r_child"];
-            if(!child) return;
+            let directKey;
 
+            if(direct === "left"){
+              child = node["l_child"];
+              directKey = "l-d";
+            }
+            if(direct === "right"){
+              child = node["r_child"];
+              directKey = "r-d";
+            }
+            if(!child) return;
             const path = svg.select(`path[data-id='${child}']`);
             if(!path) return;
-
-            let directKey;
-            if(direct === "left")directKey = "l-d";
-            if(direct === "right")directKey = "r-d";
 
 
             if(!collapsedmap[start][directKey]) collapsedmap[start][directKey] = path.attr("d");
@@ -1451,12 +1454,16 @@ $(function () {
 
 
                 minimapPaths.forEach(function (itemMinimapPath, indexMinimapPath, arrayMinimapPath) {
-
-                    if(indexMinimapPath === 0) collapsedmap[item["id"]]["minimap-l-m"] = itemMinimapPath.attr("d");
-                    if(indexMinimapPath === 1) collapsedmap[item["id"]]["minimap-r-m"] = itemMinimapPath.attr("d");
                     let data_child;
-                    if(indexMinimapPath === 0) data_child = item["l_child"];
-                    if(indexMinimapPath === 1) data_child = item["r_child"];
+                    if(indexMinimapPath === 0){
+                        collapsedmap[item["id"]]["minimap-l-m"] = itemMinimapPath.attr("d");
+                        data_child = item["l_child"];data_child = item["l_child"];
+                    }
+                    if(indexMinimapPath === 1){
+                       collapsedmap[item["id"]]["minimap-r-m"] = itemMinimapPath.attr("d");
+                       data_child = item["r_child"];
+                    }
+
 
 
                     itemMinimapPath.attr({
