@@ -946,6 +946,10 @@ $(function () {
             return children.filter(elements => elements);
         }
 
+        function getRootPathWay(start){
+
+        }
+
 
         /**
          * Collapse function. Collapses / Expands a node with the subtree
@@ -990,7 +994,7 @@ $(function () {
                 if(collapsedmap[ci]["right"]) collapsedmap[ci]["right"] = false;
             });
 
-            // COLAPSE //TODO: Fix minimap stacked collapse bug
+            // COLAPSE
             if(collapsed_check){
                 svg.selectAll(`circle[data-id='${childitem}']`).attr({display: "none"});
                 minimap.selectAll(`path[data-id='${childitem}']`).attr({display: "none"});
@@ -1077,9 +1081,6 @@ $(function () {
                 });
                 g.add(coll_line);
 
-                //TODO: Draw line for collapsed.
-
-               // coll_minimap_line = minimap.line();
 
                 nameText.hover(
                     function (){
@@ -1457,7 +1458,7 @@ $(function () {
                     let data_child;
                     if(indexMinimapPath === 0){
                         collapsedmap[item["id"]]["minimap-l-m"] = itemMinimapPath.attr("d");
-                        data_child = item["l_child"];data_child = item["l_child"];
+                        data_child = item["l_child"];
                     }
                     if(indexMinimapPath === 1){
                        collapsedmap[item["id"]]["minimap-r-m"] = itemMinimapPath.attr("d");
