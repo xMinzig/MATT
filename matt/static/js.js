@@ -1919,6 +1919,7 @@ $(function () {
                 $("#lengths-button").prop("disabled", false);
                 $("#labels-button").prop("disabled", false);
                 $("#snapshots-button").prop("disabled", false);
+                $("#compact-button").prop("disabled", false);
 
                 // Calls the undo function for button and context option
                 $("#undo-button").click(function (event) {
@@ -2290,7 +2291,7 @@ $(function () {
         instructions_lines = instructions_g.g();
         instructions_texts = instructions_g.g();
 
-        buttons_names = ["undo", "redo", "save", "snapshots", "zoom-in", "zoom-out", "search", "lengths", "labels", "options", "help"];
+        buttons_names = ["undo", "redo", "save", "snapshots", "zoom-in", "zoom-out", "help", "lengths", "labels", "options", "compact", "search"];
 
         buttons_names.forEach(function (value, index) {
             current_button = $("#" + value + "-button");

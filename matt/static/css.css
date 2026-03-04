@@ -106,7 +106,7 @@ html, body {
 #compact-button {
     position: absolute;
     top: 10px;
-    right: calc(15vw + 217px);
+    right: calc(15vw + 203px);
 }
 
 #labels-button {
