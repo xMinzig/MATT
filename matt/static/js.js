@@ -42,6 +42,8 @@ $(function () {
     let enableLengths;
     let alignLabels = true;
     let collapsedmap = {};
+    let compactmode = false;
+    let currenttree;
 
     // Gets the options initially
     getOptions();
@@ -421,9 +423,10 @@ $(function () {
 
         // Calls the draw function with the chosen tree (with or without branch lengths)
         if (typeof xhr !== "undefined" && xhr.getResponseHeader("Length")) {
+            currenttree = (trees[counter_of_trees - 1][2]);
             draw(JSON.parse(trees[counter_of_trees - 1][2]));
         } else {
-
+            currenttree = (trees[counter_of_trees - 1][1]);
             draw(JSON.parse(trees[counter_of_trees - 1][1]));
         }
 
@@ -2052,6 +2055,29 @@ $(function () {
                     $("#context-menu").removeClass("visible");
                     outgroup();
                 });
+                $('#compact-button').off("click").on("click",function (event) {
+                    let temptree;
+                    let compacttree;
+                    if(compactmode === false) {
+                        temptree = currenttree;
+                        compacttree = JSON.parse(currenttree);
+                        console.log("TEST - COMPACT VIEW ON");
+
+
+                        $("#compact-button-show").hide();
+                        $("#compact-button-hide").show();
+                        // MANIPULATE COMPACTREE
+
+
+                        //
+                        compactmode = true;
+                    }else{
+                        console.log("TEST - COMPACT VIEW OFF");
+                        $("#compact-button-show").show();
+                        $("#compact-button-hide").hide();
+                        compactmode = false;
+                    }
+                });
 
                 // Sets the flag for button activation
                 buttons_activated = true;
@@ -2182,6 +2208,15 @@ $(function () {
                 normalizedY = $("#mainDiv").outerHeight() - $("#context-menu").outerHeight();
             }
             return {normalizedX, normalizedY};
+        }
+
+        /**
+         * calculates a new tree to draw for the compact view
+         * @param tree current tree
+         * @param map current collapsed info map
+         */
+        function calculateCompactTree(tree, map){
+
         }
 
         /**
