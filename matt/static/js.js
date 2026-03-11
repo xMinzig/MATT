@@ -949,9 +949,6 @@ $(function () {
             return children.filter(elements => elements);
         }
 
-        function getRootPathWay(start){
-
-        }
 
 
         /**
@@ -975,7 +972,7 @@ $(function () {
             const temp = getTree(child);
             temp.push(child);
             temp.forEach(id =>{
-                const clean_lines  =svg.selectAll(`[data-collapsed-Line^='${id}']`);
+                const clean_lines = svg.selectAll(`[data-collapsed-Line^='${id}']`);
                 if(clean_lines !== null) clean_lines.forEach(i => i.remove());
             });
             const currentcollapsed = svg.select(`[data-collapsed-Line^='${child}']`);
@@ -2056,23 +2053,22 @@ $(function () {
                     outgroup();
                 });
                 $('#compact-button').off("click").on("click",function (event) {
-                    let temptree;
-                    let compacttree;
                     if(compactmode === false) {
-                        temptree = currenttree;
-                        compacttree = JSON.parse(currenttree);
+                        const compacttree = JSON.parse(currenttree);
                         console.log("TEST - COMPACT VIEW ON");
 
 
                         $("#compact-button-show").hide();
                         $("#compact-button-hide").show();
                         // MANIPULATE COMPACTREE
+                        calculateCompactTree(compacttree, collapsedmap);
 
 
                         //
                         compactmode = true;
                     }else{
                         console.log("TEST - COMPACT VIEW OFF");
+                        draw(JSON.parse(currenttree));
                         $("#compact-button-show").show();
                         $("#compact-button-hide").hide();
                         compactmode = false;
@@ -2215,7 +2211,37 @@ $(function () {
          * @param tree current tree
          * @param map current collapsed info map
          */
-        function calculateCompactTree(tree, map){
+        function calculateCompactTree(tree, colmap){
+            //TODO: GET COLLAPSED NODES FROM MAP. USE GETTREE FUNCTION TO REMOVE SUBTREE VON CURRENTREE AND INSERT NEW DUMMY NODES.
+
+            const collapsednodes = Object.keys(colmap).map(id => {
+                const temparray = [];
+                if(collapsedmap[id]["left"] === true) temparray.push(collapsedmap[id]["left_id"]);
+                if(collapsedmap[id]["right"] === true) temparray.push(collapsedmap[id]["right_id"]);
+                return temparray
+            }).flat();
+
+            console.log("COLLAPSED NODES: "+collapsednodes);
+
+
+
+            const removeablenodes = collapsednodes.map(id => {
+               return getTree(id);
+            }).flat();
+
+             console.log("REMOVEABLE SUBTREE NODES: "+removeablenodes);
+
+
+
+            let newtree = tree.filter(node => !removeablenodes.includes(node["id"]));
+            collapsednodes.map(id => {
+               const neededchange = newtree.find(i => i["id"] === id);
+               console.log(neededchange)
+               neededchange["name"] = colmap[id]["label"];
+               console.log(neededchange)
+            });
+
+
 
         }
 
