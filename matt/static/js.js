@@ -2061,8 +2061,7 @@ $(function () {
                         $("#compact-button-show").hide();
                         $("#compact-button-hide").show();
                         // MANIPULATE COMPACTREE
-                        calculateCompactTree(compacttree, collapsedmap);
-
+                        draw(calculateCompactTree(compacttree, collapsedmap));
 
                         //
                         compactmode = true;
@@ -2212,8 +2211,7 @@ $(function () {
          * @param map current collapsed info map
          */
         function calculateCompactTree(tree, colmap){
-            //TODO: GET COLLAPSED NODES FROM MAP. USE GETTREE FUNCTION TO REMOVE SUBTREE VON CURRENTREE AND INSERT NEW DUMMY NODES.
-
+            //TODO: FIX PROGRAMM INFUNCTIONALITY IN COMPACT MODE !!!!!
             const collapsednodes = Object.keys(colmap).map(id => {
                 const temparray = [];
                 if(collapsedmap[id]["left"] === true) temparray.push(collapsedmap[id]["left_id"]);
@@ -2221,28 +2219,23 @@ $(function () {
                 return temparray
             }).flat();
 
-            console.log("COLLAPSED NODES: "+collapsednodes);
-
+           // console.log("COLLAPSED NODES: "+collapsednodes);
 
 
             const removeablenodes = collapsednodes.map(id => {
                return getTree(id);
             }).flat();
 
-             console.log("REMOVEABLE SUBTREE NODES: "+removeablenodes);
-
+            // console.log("REMOVEABLE SUBTREE NODES: "+removeablenodes);
 
 
             let newtree = tree.filter(node => !removeablenodes.includes(node["id"]));
             collapsednodes.map(id => {
                const neededchange = newtree.find(i => i["id"] === id);
-               console.log(neededchange)
-               neededchange["name"] = colmap[id]["label"];
-               console.log(neededchange)
+               neededchange["name"] = "'"+colmap[id]["label"]+"'";
             });
 
-
-
+            return newtree;
         }
 
         /**
