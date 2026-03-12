@@ -995,7 +995,7 @@ $(function () {
             });
 
             // COLAPSE
-            if(collapsed_check){
+            if(collapsed_check && compactmode === false){
                 svg.selectAll(`circle[data-id='${childitem}']`).attr({display: "none"});
                 minimap.selectAll(`path[data-id='${childitem}']`).attr({display: "none"});
                 sub.forEach(child => {
@@ -1061,7 +1061,7 @@ $(function () {
             let coll_line = null;
             let nameText = null;
 
-            if(collapsed_check){
+            if(collapsed_check && compactmode === false){
                 nameText = svg.text(maxX - offset,  circle.attr("data-v"), "'"+collapsedmap[start]["label"]+"'"+ " (" + item_counter+ ")").attr({
                     dominantBaseline: 'middle',
                     fontSize: fontSize,
@@ -1193,7 +1193,7 @@ $(function () {
             if(!collapsedmap[start][directKey]) collapsedmap[start][directKey] = path.attr("d");
 
             //TODO: Write this nicer and better
-            if(collapsed_check){
+            if(collapsed_check && compactmode === false){
                 let minimapD;
                 const pathComponents = path.attr("d").split(/[MHV]/).filter(x => x.trim() !== "");
                 const mX = parseFloat(pathComponents[0].split(",")[0]);
@@ -1435,8 +1435,8 @@ $(function () {
 
 
                 //Removing false leaves
-                if(r_child_check["name"] !== "None") r_edge.remove();
-                if(l_child_check["name"] !== "None") l_edge.remove();
+                if(r_child_check["name"] !== "None" && compactmode === false) r_edge.remove();
+                if(l_child_check["name"] !== "None" && compactmode === false) l_edge.remove();
 
 
                 // Repeat almost everything for the minimap
@@ -2054,23 +2054,20 @@ $(function () {
                 });
                 $('#compact-button').off("click").on("click",function (event) {
                     if(compactmode === false) {
+                        compactmode = true;
                         const compacttree = JSON.parse(currenttree);
-                        console.log("TEST - COMPACT VIEW ON");
-
 
                         $("#compact-button-show").hide();
                         $("#compact-button-hide").show();
-                        // MANIPULATE COMPACTREE
+
                         draw(calculateCompactTree(compacttree, collapsedmap));
 
-                        //
-                        compactmode = true;
                     }else{
-                        console.log("TEST - COMPACT VIEW OFF");
+                        compactmode = false;
                         draw(JSON.parse(currenttree));
                         $("#compact-button-show").show();
                         $("#compact-button-hide").hide();
-                        compactmode = false;
+
                     }
                 });
 
@@ -2219,22 +2216,26 @@ $(function () {
                 return temparray
             }).flat();
 
-           // console.log("COLLAPSED NODES: "+collapsednodes);
+            console.log("COLLAPSED NODES: "+collapsednodes);
 
 
             const removeablenodes = collapsednodes.map(id => {
                return getTree(id);
             }).flat();
 
-            // console.log("REMOVEABLE SUBTREE NODES: "+removeablenodes);
+             console.log("REMOVEABLE SUBTREE NODES: "+removeablenodes);
 
 
             let newtree = tree.filter(node => !removeablenodes.includes(node["id"]));
             collapsednodes.map(id => {
                const neededchange = newtree.find(i => i["id"] === id);
                neededchange["name"] = "'"+colmap[id]["label"]+"'";
-            });
+               neededchange["l_child"] = "";
+               neededchange["r_child"] = "";
 
+            });
+            console.log("OLDTTREE:" + JSON.stringify(tree))
+            console.log("NEWTREE:" + JSON.stringify(newtree))
             return newtree;
         }
 
