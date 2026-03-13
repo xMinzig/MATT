@@ -44,6 +44,7 @@ $(function () {
     let collapsedmap = {};
     let compactmode = false;
     let currenttree;
+    let activatecompact = false;
 
     // Gets the options initially
     getOptions();
@@ -679,8 +680,8 @@ $(function () {
         if(Object.keys(collapsedmap).length === 0){
             data.forEach(n => {
             collapsedmap[n["id"]] = {left: false, right: false, left_id: null, right_id: null, label: "Collapsed",
-                "l-d": null,"r-d":null, "l_edge-Y": null, "r_edge-Y": null, "collapsed-line-Y":null,
-                "minimap-r-m": null, "minimap-l-m": null};
+                "collapsed-line-Y":null,
+                };
             });
         }
 
@@ -1005,7 +1006,7 @@ $(function () {
                 });
 
                 draw_collapsed_line(childitem, start, collapsed_check, direct);
-                updateSpacing(start, collapsed_check, direct);
+               // updateSpacing(start, collapsed_check, direct); // REPLACED BY COMPACT MODE
 
 
             //EXPAND
@@ -1016,7 +1017,6 @@ $(function () {
                     svg.selectAll(`[data-id='${child}']`).attr({display: "inline"});
                     svg.selectAll(`circle[data-id='${child}']`).attr({display: "inline"});
                     minimap.selectAll(`path[data-id='${child}']`).attr({display: "inline"});
-
                 });
                 const temptree = getTree(child);
                 temptree.push(parent[side]);
@@ -1031,7 +1031,7 @@ $(function () {
 
 
                 draw_collapsed_line(childitem, start, collapsed_check, direct);
-                updateSpacing(start, collapsed_check, direct);
+                //updateSpacing(start, collapsed_check, direct); // REPLACED BY COMPACT MODE
 
             }
         }
@@ -1144,7 +1144,7 @@ $(function () {
                         if(e.key === "Enter"){
                             if(input["value"] !== ""){
                                 const newtext = input["value"];
-                                collapsedmap[start]["label"] = newtext;
+                                collapsedmap[childitem]["label"] = newtext;
                                 this.attr({
                                     text: "\""+newtext+"\"" + "("+item_counter+")",
                                     fontStyle: "italic"
@@ -1192,7 +1192,7 @@ $(function () {
 
             if(!collapsedmap[start][directKey]) collapsedmap[start][directKey] = path.attr("d");
 
-            //TODO: Write this nicer and better
+
             if(collapsed_check && compactmode === false){
                 let minimapD;
                 const pathComponents = path.attr("d").split(/[MHV]/).filter(x => x.trim() !== "");
@@ -1435,8 +1435,8 @@ $(function () {
 
 
                 //Removing false leaves
-                if(r_child_check["name"] !== "None" && compactmode === false) r_edge.remove();
-                if(l_child_check["name"] !== "None" && compactmode === false) l_edge.remove();
+                if((r_child_check["name"] !== "None") && !collapsedmap[item["id"]]["right"]) r_edge.remove();
+                if((l_child_check["name"] !== "None") && !collapsedmap[item["id"]]["left"]) l_edge.remove();
 
 
                 // Repeat almost everything for the minimap
@@ -2213,18 +2213,13 @@ $(function () {
                 const temparray = [];
                 if(collapsedmap[id]["left"] === true) temparray.push(collapsedmap[id]["left_id"]);
                 if(collapsedmap[id]["right"] === true) temparray.push(collapsedmap[id]["right_id"]);
+
                 return temparray
             }).flat();
-
-            console.log("COLLAPSED NODES: "+collapsednodes);
-
 
             const removeablenodes = collapsednodes.map(id => {
                return getTree(id);
             }).flat();
-
-             console.log("REMOVEABLE SUBTREE NODES: "+removeablenodes);
-
 
             let newtree = tree.filter(node => !removeablenodes.includes(node["id"]));
             collapsednodes.map(id => {
@@ -2234,8 +2229,6 @@ $(function () {
                neededchange["r_child"] = "";
 
             });
-            console.log("OLDTTREE:" + JSON.stringify(tree))
-            console.log("NEWTREE:" + JSON.stringify(newtree))
             return newtree;
         }
 
