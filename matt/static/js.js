@@ -1003,6 +1003,7 @@ $(function () {
                     svg.selectAll(`circle[data-id='${child}']`).attr({display: "none"});
                     minimap.selectAll(`path[data-id='${child}']`).attr({display: "none"});
                     counter_of_nodes -= 1;
+                    console.log("-1")
                 });
                 draw_collapsed_line(childitem, start, collapsed_check, direct);
                // updateSpacing(start, collapsed_check, direct); // REPLACED BY COMPACT MODE
@@ -1017,6 +1018,7 @@ $(function () {
                     svg.selectAll(`circle[data-id='${child}']`).attr({display: "inline"});
                     minimap.selectAll(`path[data-id='${child}']`).attr({display: "inline"});
                     counter_of_nodes += 1;
+                    console.log("+1")
                 });
                 const temptree = getTree(child);
                 temptree.push(parent[side]);
@@ -2064,9 +2066,18 @@ $(function () {
                         $("#compact-button-show").hide();
                         $("#compact-button-hide").show();
 
+                        $("#info-modal-label").text("Calculating compact tree.")
+                        $("#info-modal-body").text("For larger trees this might take a while")
+                        $("#info-modal").modal("show");
+
                         draw(calculateCompactTree(compacttree, collapsedmap));
 
                     }else{
+
+                        $("#info-modal-label").text("Expanding back to original tree structure")
+                        $("#info-modal-body").text("For larger trees this might take a while")
+                        $("#info-modal").modal("show");
+
                         compactmode = false;
                         draw(JSON.parse(currenttree));
                         $("#compact-button-show").show();
