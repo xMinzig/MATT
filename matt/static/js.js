@@ -44,7 +44,7 @@ $(function () {
     let collapsedmap = {};
     let compactmode = false;
     let currenttree;
-    let activatecompact = false;
+    let counter_of_nodes = 0;
 
     // Gets the options initially
     getOptions();
@@ -425,16 +425,16 @@ $(function () {
         // Calls the draw function with the chosen tree (with or without branch lengths)
         if (typeof xhr !== "undefined" && xhr.getResponseHeader("Length")) {
             currenttree = (trees[counter_of_trees - 1][2]);
+            counter_of_nodes = JSON.parse(currenttree).length - 1
             draw(JSON.parse(trees[counter_of_trees - 1][2]));
         } else {
             currenttree = (trees[counter_of_trees - 1][1]);
+            counter_of_nodes = JSON.parse(currenttree).length - 1
             draw(JSON.parse(trees[counter_of_trees - 1][1]));
         }
 
 
     }
-
-
 
     /**
      * Enables or disables testing capabilities
@@ -969,7 +969,6 @@ $(function () {
             const child = parent[side];
             if(child === null) return;
 
-            //'GRANDPARENT' Problem fix => remove lines && custom label
             const temp = getTree(child);
             temp.push(child);
             temp.forEach(id =>{
@@ -1003,8 +1002,8 @@ $(function () {
                     svg.selectAll(`[data-id='${child}']`).attr({display: "none"});
                     svg.selectAll(`circle[data-id='${child}']`).attr({display: "none"});
                     minimap.selectAll(`path[data-id='${child}']`).attr({display: "none"});
+                    counter_of_nodes -= 1;
                 });
-
                 draw_collapsed_line(childitem, start, collapsed_check, direct);
                // updateSpacing(start, collapsed_check, direct); // REPLACED BY COMPACT MODE
 
@@ -1017,6 +1016,7 @@ $(function () {
                     svg.selectAll(`[data-id='${child}']`).attr({display: "inline"});
                     svg.selectAll(`circle[data-id='${child}']`).attr({display: "inline"});
                     minimap.selectAll(`path[data-id='${child}']`).attr({display: "inline"});
+                    counter_of_nodes += 1;
                 });
                 const temptree = getTree(child);
                 temptree.push(parent[side]);
@@ -1432,7 +1432,6 @@ $(function () {
 
                 });
                 g.add(r_edge, l_edge);
-
 
                 //Removing false leaves
                 if((r_child_check["name"] !== "None") && !collapsedmap[item["id"]]["right"]) r_edge.remove();
@@ -1919,7 +1918,12 @@ $(function () {
                 $("#lengths-button").prop("disabled", false);
                 $("#labels-button").prop("disabled", false);
                 $("#snapshots-button").prop("disabled", false);
-                $("#compact-button").prop("disabled", false);
+                if(2 < counter_of_nodes <= (data.length - 1)) {
+                     $("#compact-button").prop("disabled", false);
+                 }else{
+                     $("#compact-button").prop("disabled", true);
+                 }
+
 
                 // Calls the undo function for button and context option
                 $("#undo-button").click(function (event) {
@@ -2208,7 +2212,7 @@ $(function () {
          * @param map current collapsed info map
          */
         function calculateCompactTree(tree, colmap){
-            //TODO: FIX PROGRAMM INFUNCTIONALITY IN COMPACT MODE !!!!!
+            console.log("NODES:"+counter_of_nodes)
             const collapsednodes = Object.keys(colmap).map(id => {
                 const temparray = [];
                 if(collapsedmap[id]["left"] === true) temparray.push(collapsedmap[id]["left_id"]);
