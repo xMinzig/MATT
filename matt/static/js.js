@@ -415,6 +415,12 @@ $(function () {
             $("#redo-button").prop("disabled", true);
         }
 
+        if(2 < counter_of_nodes <= (data.length - 1)) {
+            $("#compact-button").prop("disabled", false);
+        }else{
+            $("#compact-button").prop("disabled", true);
+        }
+
         // Saves the first snapshot
         // TODO This should be toggleable in options
         if (snapshotTrees.length == 0) {
@@ -1003,7 +1009,6 @@ $(function () {
                     svg.selectAll(`circle[data-id='${child}']`).attr({display: "none"});
                     minimap.selectAll(`path[data-id='${child}']`).attr({display: "none"});
                     counter_of_nodes -= 1;
-                    console.log("-1")
                 });
                 draw_collapsed_line(childitem, start, collapsed_check, direct);
                // updateSpacing(start, collapsed_check, direct); // REPLACED BY COMPACT MODE
@@ -1011,6 +1016,7 @@ $(function () {
 
             //EXPAND
             }else{
+                if(compactmode === true) return;
                 svg.selectAll(`circle[data-id='${childitem}']`).attr({display: "inline"});
                 minimap.selectAll(`path[data-id='${childitem}']`).attr({display: "inline"});
                 sub.forEach(child => {
@@ -1018,7 +1024,6 @@ $(function () {
                     svg.selectAll(`circle[data-id='${child}']`).attr({display: "inline"});
                     minimap.selectAll(`path[data-id='${child}']`).attr({display: "inline"});
                     counter_of_nodes += 1;
-                    console.log("+1")
                 });
                 const temptree = getTree(child);
                 temptree.push(parent[side]);
@@ -1162,6 +1167,7 @@ $(function () {
 
                 });
             }else{
+                if(compactmode === true) return;
                 svg.selectAll(`[data-collapsed-Line='${start}-${direct}']`).remove()
             }
         }
@@ -1698,11 +1704,11 @@ $(function () {
             if(path) collapsedmap[id]["l-d"] = path.attr("d");
             const tree = getTree(id);
             tree.forEach(children =>{
-                if(collapsedmap[children]["r-d"]){
+                if(collapsedmap[children]["r-d"] && collapsedmap[children]["right_id"]){
                     const rightpath_id = collapsedmap[children]["right_id"];
                     const children_path = svg.select(`path[data-id='${rightpath_id}']`);
                     collapsedmap[children]["r-d"] = children_path.attr("d");
-                }else if(collapsedmap[children]["l-d"]){
+                }else if(collapsedmap[children]["l-d"] && collapsedmap[children]["left_id"]){
                     const leftpath_id = collapsedmap[children]["left_id"];
                     const children_path = svg.select(`path[data-id='${leftpath_id}']`);
                     collapsedmap[children]["l-d"] = children_path.attr("d");
@@ -1920,11 +1926,6 @@ $(function () {
                 $("#lengths-button").prop("disabled", false);
                 $("#labels-button").prop("disabled", false);
                 $("#snapshots-button").prop("disabled", false);
-                if(2 < counter_of_nodes <= (data.length - 1)) {
-                     $("#compact-button").prop("disabled", false);
-                 }else{
-                     $("#compact-button").prop("disabled", true);
-                 }
 
 
                 // Calls the undo function for button and context option
