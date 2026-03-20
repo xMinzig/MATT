@@ -415,11 +415,6 @@ $(function () {
             $("#redo-button").prop("disabled", true);
         }
 
-        if(2 < counter_of_nodes <= (data.length - 1)) {
-            $("#compact-button").prop("disabled", false);
-        }else{
-            $("#compact-button").prop("disabled", true);
-        }
 
         // Saves the first snapshot
         // TODO This should be toggleable in options
@@ -1010,13 +1005,18 @@ $(function () {
                     minimap.selectAll(`path[data-id='${child}']`).attr({display: "none"});
                     counter_of_nodes -= 1;
                 });
+                counter_of_nodes -= 1;
                 draw_collapsed_line(childitem, start, collapsed_check, direct);
                // updateSpacing(start, collapsed_check, direct); // REPLACED BY COMPACT MODE
+                if((2 < counter_of_nodes && counter_of_nodes <= (data.length - 1)) || compactmode === true)  {
+                    $("#compact-button").prop("disabled", false);
+                }else{
+                    $("#compact-button").prop("disabled", true);
+                }
 
 
             //EXPAND
             }else{
-                if(compactmode === true) return;
                 svg.selectAll(`circle[data-id='${childitem}']`).attr({display: "inline"});
                 minimap.selectAll(`path[data-id='${childitem}']`).attr({display: "inline"});
                 sub.forEach(child => {
@@ -1025,6 +1025,8 @@ $(function () {
                     minimap.selectAll(`path[data-id='${child}']`).attr({display: "inline"});
                     counter_of_nodes += 1;
                 });
+                counter_of_nodes += 1;
+
                 const temptree = getTree(child);
                 temptree.push(parent[side]);
                 temptree.forEach(child => {
@@ -1034,11 +1036,19 @@ $(function () {
                     if(collapsedmap[child]["r_edge-Y"]) svg.select(`circle[data-id='${child}'][data-direct='right']`).attr({cy: collapsedmap[child]["r_edge-Y"], "data-v":collapsedmap[child]["r_edge-Y"]});
                     if(collapsedmap[child]["r-d"]) minimap.select(`path[data-child='${collapsedmap[child]["right_id"]}`).attr({d: collapsedmap[child]["minimap-r-m"]});
                     if(collapsedmap[child]["l-d"]) minimap.select(`path[data-child='${collapsedmap[child]["left_id"]}']`).attr({d: collapsedmap[child]["minimap-l-m"]});
+
                 });
+
 
 
                 draw_collapsed_line(childitem, start, collapsed_check, direct);
                 //updateSpacing(start, collapsed_check, direct); // REPLACED BY COMPACT MODE
+                if((2 < counter_of_nodes && counter_of_nodes <= (data.length - 1)) || compactmode === true) {
+                    $("#compact-button").prop("disabled", false);
+                }else{
+                    $("#compact-button").prop("disabled", true);
+                }
+
 
             }
         }
@@ -1717,9 +1727,11 @@ $(function () {
         }
         if(collapsedmap[id]["right"]){
             collapse(node["r_child"], id ,collapsedmap[id]["right"], "right");
+            counter_of_nodes = JSON.parse(currenttree).length - 1
         }
         if(collapsedmap[id]["left"]){
             collapse(node["l_child"], id ,collapsedmap[id]["left"], "left");
+            counter_of_nodes = JSON.parse(currenttree).length - 1
         }
     });
 
@@ -2068,10 +2080,13 @@ $(function () {
                         $("#compact-button-hide").show();
 
                         $("#info-modal-label").text("Calculating compact tree.")
-                        $("#info-modal-body").text("For larger trees this might take a while")
+                        $("#info-modal-body").text("For larger trees this might take a while. Attaching & Show/hiding branch lengths is disabled while compactmode is enabled.")
                         $("#info-modal").modal("show");
 
                         draw(calculateCompactTree(compacttree, collapsedmap));
+
+                        $("#lengths-button").prop("disabled", true);
+                        $("#labels-button").prop("disabled", true);
 
                     }else{
 
@@ -2081,6 +2096,10 @@ $(function () {
 
                         compactmode = false;
                         draw(JSON.parse(currenttree));
+
+                        $("#lengths-button").prop("disabled", false);
+                        $("#labels-button").prop("disabled", false);
+
                         $("#compact-button-show").show();
                         $("#compact-button-hide").hide();
 
@@ -2224,7 +2243,6 @@ $(function () {
          * @param map current collapsed info map
          */
         function calculateCompactTree(tree, colmap){
-            console.log("NODES:"+counter_of_nodes)
             const collapsednodes = Object.keys(colmap).map(id => {
                 const temparray = [];
                 if(collapsedmap[id]["left"] === true) temparray.push(collapsedmap[id]["left_id"]);
