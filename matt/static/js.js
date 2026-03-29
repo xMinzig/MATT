@@ -44,7 +44,7 @@ $(function () {
     let collapsedmap = {};
     let compactmode = false;
     let currenttree;
-    let counter_of_nodes = 0;
+    let counter_of_nodes = []
 
     // Gets the options initially
     getOptions();
@@ -426,11 +426,9 @@ $(function () {
         // Calls the draw function with the chosen tree (with or without branch lengths)
         if (typeof xhr !== "undefined" && xhr.getResponseHeader("Length")) {
             currenttree = (trees[counter_of_trees - 1][2]);
-            counter_of_nodes = JSON.parse(currenttree).length - 1
             draw(JSON.parse(trees[counter_of_trees - 1][2]));
         } else {
             currenttree = (trees[counter_of_trees - 1][1]);
-            counter_of_nodes = JSON.parse(currenttree).length - 1
             draw(JSON.parse(trees[counter_of_trees - 1][1]));
         }
 
@@ -1003,12 +1001,12 @@ $(function () {
                     svg.selectAll(`[data-id='${child}']`).attr({display: "none"});
                     svg.selectAll(`circle[data-id='${child}']`).attr({display: "none"});
                     minimap.selectAll(`path[data-id='${child}']`).attr({display: "none"});
-                    counter_of_nodes -= 1;
                 });
-                counter_of_nodes -= 1;
+                counter_of_nodes.push(...sub);
+                console.log(counter_of_nodes)
                 draw_collapsed_line(childitem, start, collapsed_check, direct);
                // updateSpacing(start, collapsed_check, direct); // REPLACED BY COMPACT MODE
-                if((2 < counter_of_nodes && counter_of_nodes <= (data.length - 1)) || compactmode === true)  {
+                if((counter_of_nodes.length > 0))  {
                     $("#compact-button").prop("disabled", false);
                 }else{
                     $("#compact-button").prop("disabled", true);
@@ -1023,9 +1021,11 @@ $(function () {
                     svg.selectAll(`[data-id='${child}']`).attr({display: "inline"});
                     svg.selectAll(`circle[data-id='${child}']`).attr({display: "inline"});
                     minimap.selectAll(`path[data-id='${child}']`).attr({display: "inline"});
-                    counter_of_nodes += 1;
+                    counter_of_nodes = counter_of_nodes.filter(x=> x !== child);
                 });
-                counter_of_nodes += 1;
+                console.log(counter_of_nodes)
+
+
 
                 const temptree = getTree(child);
                 temptree.push(parent[side]);
@@ -1043,7 +1043,7 @@ $(function () {
 
                 draw_collapsed_line(childitem, start, collapsed_check, direct);
                 //updateSpacing(start, collapsed_check, direct); // REPLACED BY COMPACT MODE
-                if((2 < counter_of_nodes && counter_of_nodes <= (data.length - 1)) || compactmode === true) {
+                if((counter_of_nodes.length > 0))  {
                     $("#compact-button").prop("disabled", false);
                 }else{
                     $("#compact-button").prop("disabled", true);
@@ -1646,95 +1646,93 @@ $(function () {
             }
         });
 
+    if(compactmode === false) {
+        Object.keys(collapsedmap).forEach(id => {
+            document.querySelectorAll(".svg-edit-input").forEach(e => e.remove());
+            const node = data.find(d => d["id"] === id);
+            if (node === null) return;
 
-    Object.keys(collapsedmap).forEach(id => {
-        document.querySelectorAll(".svg-edit-input").forEach(e => e.remove());
-        const node = data.find(d => d["id"] === id);
-        if(node === null) return;
+            collapsedmap[id]["l-d"] = null;
+            collapsedmap[id]["r-d"] = null;
+            collapsedmap[id]["l_edge-Y"] = null;
+            collapsedmap[id]["r_edge-Y"] = null;
+            collapsedmap[id]["collapsed-line-Y"] = null;
 
-        collapsedmap[id]["l-d"] = null;
-        collapsedmap[id]["r-d"] = null;
-        collapsedmap[id]["l_edge-Y"] = null;
-        collapsedmap[id]["r_edge-Y"] = null;
-        collapsedmap[id]["collapsed-line-Y"] = null;
-
-        //SIDE SWAP CHECK IF STATEMENTS AFTER BRANCH SWAP
-        if(collapsedmap[id]["right"] && collapsedmap[id]["right_id"] !== null){
-            if(node["r_child"] !== collapsedmap[id]["right_id"]){
-                if(node["l_child"] === collapsedmap[id]["right_id"]){
-                    collapsedmap[id]["left"] = true;
-                    collapsedmap[id]["right"] = false;
-                    collapsedmap[id]["left_id"] = collapsedmap[id]["right_id"];
-                    collapsedmap[id]["right_id"] = null;
-                }else{
-                    collapsedmap[id]["right_id"] = null;
-                    collapsedmap[id]["right"] = false;
+            //SIDE SWAP CHECK IF STATEMENTS AFTER BRANCH SWAP
+            if (collapsedmap[id]["right"] && collapsedmap[id]["right_id"] !== null) {
+                if (node["r_child"] !== collapsedmap[id]["right_id"]) {
+                    if (node["l_child"] === collapsedmap[id]["right_id"]) {
+                        collapsedmap[id]["left"] = true;
+                        collapsedmap[id]["right"] = false;
+                        collapsedmap[id]["left_id"] = collapsedmap[id]["right_id"];
+                        collapsedmap[id]["right_id"] = null;
+                    } else {
+                        collapsedmap[id]["right_id"] = null;
+                        collapsedmap[id]["right"] = false;
+                    }
                 }
             }
-        }
-        if(collapsedmap[id]["left"] && collapsedmap[id]["left_id"] !== null){
-            if(node["l_child"] !== collapsedmap[id]["left_id"]){
-                if(node["r_child"] === collapsedmap[id]["left_id"]){
-                    collapsedmap[id]["right"] = true;
-                    collapsedmap[id]["left"] = false;
-                    collapsedmap[id]["right_id"] = collapsedmap[id]["left_id"];
-                    collapsedmap[id]["left_id"] = null;
-                    collapsedmap[id]["minimap-l-m"] = null;
-                }else{
-                    collapsedmap[id]["left_id"] = null;
-                    collapsedmap[id]["left"] = false;
-                    collapsedmap[id]["minimap-l-m"] = null;
+            if (collapsedmap[id]["left"] && collapsedmap[id]["left_id"] !== null) {
+                if (node["l_child"] !== collapsedmap[id]["left_id"]) {
+                    if (node["r_child"] === collapsedmap[id]["left_id"]) {
+                        collapsedmap[id]["right"] = true;
+                        collapsedmap[id]["left"] = false;
+                        collapsedmap[id]["right_id"] = collapsedmap[id]["left_id"];
+                        collapsedmap[id]["left_id"] = null;
+                        collapsedmap[id]["minimap-l-m"] = null;
+                    } else {
+                        collapsedmap[id]["left_id"] = null;
+                        collapsedmap[id]["left"] = false;
+                        collapsedmap[id]["minimap-l-m"] = null;
+                    }
                 }
             }
-        }
-        //TODO: Check if this code is still necessary (this was a hotfix)
 
+            if (collapsedmap[id]["right"] && collapsedmap[id]["right_id"]) {
+                const child = collapsedmap[id]["right_id"];
+                const path = svg.select(`path[data-id='${child}']`);
+                if (path) collapsedmap[id]["r-d"] = path.attr("d");
+                const tree = getTree(id);
+                tree.forEach(children => {
+                    if (collapsedmap[children]["r-d"]) {
+                        const rightpath_id = collapsedmap[children]["right_id"];
+                        const children_path = svg.select(`path[data-id='${rightpath_id}']`);
+                        collapsedmap[children]["r-d"] = children_path.attr("d");
+                    } else if (collapsedmap[children]["l-d"]) {
+                        const leftpath_id = collapsedmap[children]["left_id"];
+                        const children_path = svg.select(`path[data-id='${leftpath_id}']`);
+                        collapsedmap[children]["l-d"] = children_path.attr("d");
+                    }
 
-        if(collapsedmap[id]["right"] && collapsedmap[id]["right_id"]){
-            const child = collapsedmap[id]["right_id"];
-            const path = svg.select(`path[data-id='${child}']`);
-            if(path) collapsedmap[id]["r-d"] = path.attr("d");
-            const tree = getTree(id);
-            tree.forEach(children =>{
-                if(collapsedmap[children]["r-d"]){
-                    const rightpath_id = collapsedmap[children]["right_id"];
-                    const children_path = svg.select(`path[data-id='${rightpath_id}']`);
-                    collapsedmap[children]["r-d"] = children_path.attr("d");
-                }else if(collapsedmap[children]["l-d"]){
-                    const leftpath_id = collapsedmap[children]["left_id"];
-                    const children_path = svg.select(`path[data-id='${leftpath_id}']`);
-                    collapsedmap[children]["l-d"] = children_path.attr("d");
-                }
+                });
+            }
+            if (collapsedmap[id]["left"] && collapsedmap[id]["left_id"]) {
+                const child = collapsedmap[id]["left_id"];
+                const path = svg.select(`path[data-id='${child}']`);
+                if (path) collapsedmap[id]["l-d"] = path.attr("d");
+                const tree = getTree(id);
+                tree.forEach(children => {
+                    if (collapsedmap[children]["r-d"] && collapsedmap[children]["right_id"]) {
+                        const rightpath_id = collapsedmap[children]["right_id"];
+                        const children_path = svg.select(`path[data-id='${rightpath_id}']`);
+                        collapsedmap[children]["r-d"] = children_path.attr("d");
+                    } else if (collapsedmap[children]["l-d"] && collapsedmap[children]["left_id"]) {
+                        const leftpath_id = collapsedmap[children]["left_id"];
+                        const children_path = svg.select(`path[data-id='${leftpath_id}']`);
+                        collapsedmap[children]["l-d"] = children_path.attr("d");
+                    }
+                });
+            }
+            if (collapsedmap[id]["right"]) {
+                collapse(node["r_child"], id, collapsedmap[id]["right"], "right");
 
-            });
-        }
-        if(collapsedmap[id]["left"] && collapsedmap[id]["left_id"]){
-            const child = collapsedmap[id]["left_id"];
-            const path = svg.select(`path[data-id='${child}']`);
-            if(path) collapsedmap[id]["l-d"] = path.attr("d");
-            const tree = getTree(id);
-            tree.forEach(children =>{
-                if(collapsedmap[children]["r-d"] && collapsedmap[children]["right_id"]){
-                    const rightpath_id = collapsedmap[children]["right_id"];
-                    const children_path = svg.select(`path[data-id='${rightpath_id}']`);
-                    collapsedmap[children]["r-d"] = children_path.attr("d");
-                }else if(collapsedmap[children]["l-d"] && collapsedmap[children]["left_id"]){
-                    const leftpath_id = collapsedmap[children]["left_id"];
-                    const children_path = svg.select(`path[data-id='${leftpath_id}']`);
-                    collapsedmap[children]["l-d"] = children_path.attr("d");
-                }
-            });
-        }
-        if(collapsedmap[id]["right"]){
-            collapse(node["r_child"], id ,collapsedmap[id]["right"], "right");
-            counter_of_nodes = JSON.parse(currenttree).length - 1
-        }
-        if(collapsedmap[id]["left"]){
-            collapse(node["l_child"], id ,collapsedmap[id]["left"], "left");
-            counter_of_nodes = JSON.parse(currenttree).length - 1
-        }
-    });
+            }
+            if (collapsedmap[id]["left"]) {
+                collapse(node["l_child"], id, collapsedmap[id]["left"], "left");
 
+            }
+        });
+    }
 
 
         // Sets the initial position
@@ -2072,6 +2070,7 @@ $(function () {
                     outgroup();
                 });
                 $('#compact-button').off("click").on("click",function (event) {
+                    console.log("IJSDOIJASID")
                     if(compactmode === false) {
                         compactmode = true;
                         const compacttree = JSON.parse(currenttree);
@@ -2245,8 +2244,8 @@ $(function () {
         function calculateCompactTree(tree, colmap){
             const collapsednodes = Object.keys(colmap).map(id => {
                 const temparray = [];
-                if(collapsedmap[id]["left"] === true) temparray.push(collapsedmap[id]["left_id"]);
-                if(collapsedmap[id]["right"] === true) temparray.push(collapsedmap[id]["right_id"]);
+                if(colmap[id]["left"] === true) temparray.push(colmap[id]["left_id"]);
+                if(colmap[id]["right"] === true) temparray.push(colmap[id]["right_id"]);
 
                 return temparray
             }).flat();
