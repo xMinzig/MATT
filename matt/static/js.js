@@ -44,7 +44,6 @@ $(function () {
     let collapsedmap = {};
     let compactmode = false;
     let currenttree;
-    let cct;
     let counter_of_nodes = []
 
     // Gets the options initially
@@ -1005,7 +1004,6 @@ $(function () {
                 });
                 counter_of_nodes.push(...sub);
                 draw_collapsed_line(childitem, start, collapsed_check, direct);
-               // updateSpacing(start, collapsed_check, direct); // REPLACED BY COMPACT MODE
                 if((counter_of_nodes.length > 0))  {
                     $("#compact-button").prop("disabled", false);
                 }else{
@@ -1024,22 +1022,9 @@ $(function () {
                     counter_of_nodes = counter_of_nodes.filter(x=> x !== child);
                 });
 
-                const temptree = getTree(child);
-                temptree.push(parent[side]);
-                temptree.forEach(child => {
-                    if(collapsedmap[child]["l-d"]) svg.select(`path[data-id='${collapsedmap[child]["left_id"]}']`).attr({d: collapsedmap[child]["l-d"]});
-                    if(collapsedmap[child]["r-d"]) svg.select(`path[data-id='${collapsedmap[child]["right_id"]}']`).attr({d: collapsedmap[child]["r-d"]});
-                    if(collapsedmap[child]["l_edge-Y"]) svg.select(`circle[data-id='${child}'][data-direct='left']`).attr({cy: collapsedmap[child]["l_edge-Y"], "data-v":collapsedmap[child]["l_edge-Y"]});
-                    if(collapsedmap[child]["r_edge-Y"]) svg.select(`circle[data-id='${child}'][data-direct='right']`).attr({cy: collapsedmap[child]["r_edge-Y"], "data-v":collapsedmap[child]["r_edge-Y"]});
-                    if(collapsedmap[child]["r-d"]) minimap.select(`path[data-child='${collapsedmap[child]["right_id"]}`).attr({d: collapsedmap[child]["minimap-r-m"]});
-                    if(collapsedmap[child]["l-d"]) minimap.select(`path[data-child='${collapsedmap[child]["left_id"]}']`).attr({d: collapsedmap[child]["minimap-l-m"]});
-
-                });
-
 
 
                 draw_collapsed_line(childitem, start, collapsed_check, direct);
-                //updateSpacing(start, collapsed_check, direct); // REPLACED BY COMPACT MODE
                 if((counter_of_nodes.length > 0))  {
                     $("#compact-button").prop("disabled", false);
                 }else{
@@ -1177,131 +1162,6 @@ $(function () {
                 if(compactmode === true) return;
                 svg.selectAll(`[data-collapsed-Line='${start}-${direct}']`).remove()
             }
-        }
-
-        /**
-         * Updates the spacing after collapse
-         * @param start startnode
-         * @param collapsed_check collapse check (true/false) at certain node
-         * @param direct (direction: left/right)
-         */
-        function updateSpacing(start, collapsed_check, direct){
-
-            const node = data.find(d=> d["id"] === start);
-
-            let child;
-            let directKey;
-
-            if(direct === "left"){
-              child = node["l_child"];
-              directKey = "l-d";
-            }
-            if(direct === "right"){
-              child = node["r_child"];
-              directKey = "r-d";
-            }
-            if(!child) return;
-            const path = svg.select(`path[data-id='${child}']`);
-            if(!path) return;
-
-
-            if(!collapsedmap[start][directKey]) collapsedmap[start][directKey] = path.attr("d");
-
-
-            if(collapsed_check && compactmode === false){
-                let minimapD;
-                const pathComponents = path.attr("d").split(/[MHV]/).filter(x => x.trim() !== "");
-                const mX = parseFloat(pathComponents[0].split(",")[0]);
-                const mY = parseFloat(pathComponents[0].split(",")[1]);
-                const hX = parseFloat(pathComponents[2]);
-
-                let newVY;
-                if(direct === "left"){
-                    newVY = mY-25;
-                    minimapD = collapsedmap[start]["minimap-l-m"];
-                }
-                if(direct === "right"){
-                    newVY = mY+25;
-                    minimapD = collapsedmap[start]["minimap-r-m"];
-                }
-
-                const minimapAttributes = minimapD.split(/[MHV]/).filter(x => x.trim() !== "");
-                const miniDX = parseFloat(minimapAttributes[0].split(",")[0]);
-                const miniDY = parseFloat(minimapAttributes[0].split(",")[1]);
-                const miniDhx = parseFloat(minimapAttributes[2]);
-                let newMiniY ;
-                let minimapPath;
-
-
-                if(direct === "left"){
-                    minimapPath = minimap.select(`path[data-child='${child}']`);
-                    path.attr({d: `M${mX},${mY} V${newVY} H${hX}`});
-                    newMiniY = miniDY - 7;
-                    minimapPath.attr({d:`M${miniDX},${miniDY} V${newMiniY} H${miniDhx}`});
-                }
-                if(direct === "right") {
-                    minimapPath = minimap.select(`path[data-child='${child}']`);
-                    path.attr({d: `M${mX},${mY} V${newVY} H${hX}`});
-                    newMiniY = miniDY + 7;
-                    minimapPath.attr({d:`M${miniDX},${miniDY} V${newMiniY} H${miniDhx}`});
-                }
-                const collapsedItems = svg.selectAll(`[data-collapsed-Line='${start}-${direct}']`);
-                const circle = svg.select(`circle[data-id='${start}'][data-direct='${direct}']`);
-
-                collapsedItems.forEach(item =>{
-                    const t = item.type;
-
-                    if(t === "text"){
-                        item.attr({y: newVY});
-                    }
-                    if(t === "line"){
-                        item.attr({y1: newVY, y2:newVY});
-                    }
-                });
-
-                if(direct === "left")collapsedmap[start]["l_edge-Y"] = circle.attr("data-v");
-                if(direct === "right") collapsedmap[start]["r_edge-Y"] = circle.attr("data-v");
-
-
-                circle.attr({cy: newVY, "data-v":newVY});
-
-            }else{
-                path.attr({d: collapsedmap[start][directKey]});
-                const collapsedItems = svg.selectAll(`[data-collapsed-Line='${start}-${direct}']`);
-                const circle = svg.select(`circle[data-id='${start}'][data-direct='${direct}']`);
-                let minimapPath;
-
-                collapsedItems.forEach(item =>{
-                    const t = item.type;
-                    if(t === "text"){
-                        item.attr({y: collapsedmap[start]["collapsed-line-Y"]});
-                    }
-                    if(t === "line"){
-                        item.attr({y1: collapsedmap[start]["collapsed-line-Y"], y2:collapsedmap[start]["collapsed-line-Y"]});
-                    }
-                });
-
-                let oldCircleY;
-                let oldMinimapD;
-                if(direct === "left"){
-                   minimapPath = minimap.select(`path[data-child='${child}']`);
-
-                   oldCircleY = collapsedmap[start]["l_edge-Y"];
-                   oldMinimapD = collapsedmap[start]["minimap-l-m"];
-                }
-                if(direct === "right"){
-                  minimapPath = minimap.select(`path[data-child='${child}']`);
-
-                  oldCircleY = collapsedmap[start]["r_edge-Y"];
-                  oldMinimapD = collapsedmap[start]["minimap-r-m"];
-                }
-
-                circle.attr({cy: oldCircleY, "data-v":oldCircleY});
-                minimapPath.attr({d: oldMinimapD});
-
-            }
-
-
         }
 
 
@@ -2074,13 +1934,12 @@ $(function () {
                         $("#compact-button-show").hide();
                         $("#compact-button-hide").show();
 
-                        $("#info-modal-label").text("Calculating compact tree.")
-                        $("#info-modal-body").text("For larger trees this might take a while. Attaching & Show/hiding branch lengths is disabled while compactmode is enabled.")
+                        $("#info-modal-label").text("Drawing compact tree.")
+                        $("#info-modal-body").text("For larger trees this might take a while.")
                         $("#info-modal").modal("show");
-                        cct = calculateCompactTree(compacttree, collapsedmap)
-                        draw(cct);
+                        draw(calculateCompactTree(compacttree, collapsedmap));
 
-                        $("#lengths-button").prop("disabled", true);
+                        //$("#lengths-button").prop("disabled", true);
                         //$("#labels-button").prop("disabled", true);
 
                     }else{
@@ -2092,7 +1951,7 @@ $(function () {
                         compactmode = false;
                         draw(JSON.parse(currenttree));
 
-                        $("#lengths-button").prop("disabled", false);
+                        //$("#lengths-button").prop("disabled", false);
                         //$("#labels-button").prop("disabled", false);
 
                         $("#compact-button-show").show();
@@ -2164,11 +2023,11 @@ $(function () {
          * Shows the branch lengths if they are available and hides them if they are shown
          */
         function toggleLength() {
-            if (enableLengths) {
+            if (enableLengths && compactmode === false) {
                 draw(JSON.parse(trees[counter_of_trees - 1][1]));
                 $("#lengths-button-hide").hide();
                 $("#lengths-button-show").show();
-            } else {
+            } else if(!enableLengths && compactmode === false){
                 if (trees[counter_of_trees - 1][2] != null) {
                     draw(JSON.parse(trees[counter_of_trees - 1][2]));
                     $("#lengths-button-show").hide();
@@ -2176,6 +2035,14 @@ $(function () {
                 } else {
                     $("#compute-modal").modal("show");
                 }
+            }else if(enableLengths && compactmode === true){
+                draw(calculateCompactTree(JSON.parse(trees[counter_of_trees - 1][1]), collapsedmap));
+                $("#lengths-button-hide").hide();
+                $("#lengths-button-show").show();
+            }else if(trees[counter_of_trees - 1][2] != null && compactmode === true){
+                draw(calculateCompactTree(JSON.parse(trees[counter_of_trees - 1][2]), collapsedmap));
+                $("#lengths-button-show").hide();
+                $("#lengths-button-hide").show();
             }
         }
 
