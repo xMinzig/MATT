@@ -44,6 +44,7 @@ $(function () {
     let collapsedmap = {};
     let compactmode = false;
     let currenttree;
+    let cct;
     let counter_of_nodes = []
 
     // Gets the options initially
@@ -1003,7 +1004,6 @@ $(function () {
                     minimap.selectAll(`path[data-id='${child}']`).attr({display: "none"});
                 });
                 counter_of_nodes.push(...sub);
-                console.log(counter_of_nodes)
                 draw_collapsed_line(childitem, start, collapsed_check, direct);
                // updateSpacing(start, collapsed_check, direct); // REPLACED BY COMPACT MODE
                 if((counter_of_nodes.length > 0))  {
@@ -1023,9 +1023,6 @@ $(function () {
                     minimap.selectAll(`path[data-id='${child}']`).attr({display: "inline"});
                     counter_of_nodes = counter_of_nodes.filter(x=> x !== child);
                 });
-                console.log(counter_of_nodes)
-
-
 
                 const temptree = getTree(child);
                 temptree.push(parent[side]);
@@ -2070,7 +2067,6 @@ $(function () {
                     outgroup();
                 });
                 $('#compact-button').off("click").on("click",function (event) {
-                    console.log("IJSDOIJASID")
                     if(compactmode === false) {
                         compactmode = true;
                         const compacttree = JSON.parse(currenttree);
@@ -2081,11 +2077,11 @@ $(function () {
                         $("#info-modal-label").text("Calculating compact tree.")
                         $("#info-modal-body").text("For larger trees this might take a while. Attaching & Show/hiding branch lengths is disabled while compactmode is enabled.")
                         $("#info-modal").modal("show");
-
-                        draw(calculateCompactTree(compacttree, collapsedmap));
+                        cct = calculateCompactTree(compacttree, collapsedmap)
+                        draw(cct);
 
                         $("#lengths-button").prop("disabled", true);
-                        $("#labels-button").prop("disabled", true);
+                        //$("#labels-button").prop("disabled", true);
 
                     }else{
 
@@ -2097,7 +2093,7 @@ $(function () {
                         draw(JSON.parse(currenttree));
 
                         $("#lengths-button").prop("disabled", false);
-                        $("#labels-button").prop("disabled", false);
+                        //$("#labels-button").prop("disabled", false);
 
                         $("#compact-button-show").show();
                         $("#compact-button-hide").hide();
@@ -2196,10 +2192,15 @@ $(function () {
                 $("#labels-button-align").show();
                 alignLabels = true;
             }
-            if (!enableLengths) {
+            if (!enableLengths && compactmode === false) {
                 draw(JSON.parse(trees[counter_of_trees - 1][1]));
-            } else if (trees[counter_of_trees - 1][2] != null) {
+            } else if (trees[counter_of_trees - 1][2] != null && compactmode === false) {
                 draw(JSON.parse(trees[counter_of_trees - 1][2]));
+            }else if(!enableLengths && compactmode === true){
+                draw(calculateCompactTree(JSON.parse(trees[counter_of_trees - 1][1]), collapsedmap));
+            }else if( compactmode === true && trees[counter_of_trees - 1][2] != null) {
+                draw(calculateCompactTree(JSON.parse(trees[counter_of_trees - 1][2]), collapsedmap));
+
             }
         }
 
