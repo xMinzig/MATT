@@ -995,7 +995,7 @@ $(function () {
             });
 
             // COLAPSE
-            if(collapsed_check && compactmode === false){
+            if(collapsed_check){
                 svg.selectAll(`circle[data-id='${childitem}']`).attr({display: "none"});
                 minimap.selectAll(`path[data-id='${childitem}']`).attr({display: "none"});
                 sub.forEach(child => {
@@ -1061,7 +1061,7 @@ $(function () {
             let coll_line = null;
             let nameText = null;
 
-            if(collapsed_check && compactmode === false){
+            if(collapsed_check){
                 nameText = svg.text(maxX - offset,  circle.attr("data-v"), "'"+collapsedmap[start]["label"]+"'"+ " (" + item_counter+ ")").attr({
                     dominantBaseline: 'middle',
                     fontSize: fontSize,
@@ -1173,7 +1173,6 @@ $(function () {
 
                 });
             }else{
-                if(compactmode === true) return;
                 svg.selectAll(`[data-collapsed-Line='${start}-${direct}']`).remove()
             }
         }
