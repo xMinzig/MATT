@@ -423,7 +423,9 @@ $(function () {
             description(trees[counter_of_trees - 1][0], "Original");
         }
 
+
         // Calls the draw function with the chosen tree (with or without branch lengths)
+
         if (typeof xhr !== "undefined" && xhr.getResponseHeader("Length")) {
             currenttree = (trees[counter_of_trees - 1][2]);
             draw(JSON.parse(trees[counter_of_trees - 1][2]));
@@ -431,8 +433,6 @@ $(function () {
             currenttree = (trees[counter_of_trees - 1][1]);
             draw(JSON.parse(trees[counter_of_trees - 1][1]));
         }
-
-
     }
 
     /**
@@ -683,6 +683,7 @@ $(function () {
                 };
             });
         }
+
 
 
         $("#outgroup-button").css("display", "none");
@@ -1086,22 +1087,35 @@ $(function () {
                         this.node.style.cursor = "pointer";
                         this.attr({fill:"#1e90ff"});
                         const box = this.getBBox();
-                        let text;
-                        if(item_counter <= 10) {
-                            text = svg.text(box.x + box.width + 10, box.y + box.height / 2,
-                                "'"+collapsedmap[start]["label"]+"' "+"contains  "+item_counter+" taxa:  "  + preview_containing + ", ... ( 0 More )" ).attr({
-                                fill: "#171515",
-                                "collapse-hover-id": start
-                            });
 
-                        }else if(item_counter > 10){
-                            text = svg.text(box.x + box.width + 10, box.y + box.height / 2,
-                                "'"+collapsedmap[start]["label"]+"' "+"contains "+item_counter+" taxa:  " + preview_containing + ", ... ( "+ (item_counter-10)+ " More )" ).attr({
-                                fill: "#171515",
-                                "collapse-hover-id": start
-                            });
-
+                        const previewlist = preview_containing.split(",").map(x => x.trim()).slice(0,10);
+                        let lines = [];
+                        lines.push("'"+collapsedmap[start]["label"]+"' "+"contains  "+item_counter+" taxa:");
+                        lines.push(" ")
+                        previewlist.forEach(taxa => lines.push("- "+taxa));
+                        lines.push(" ");
+                        if(item_counter > 10){
+                            lines.push(" ... ( "+ (item_counter-10)+ " More )");
+                        }else{
+                            lines.push(" ... ( 0 More )");
                         }
+                        let text = svg.text(box.x + box.width+10, box.y + box.height /2, lines).attr({
+                            fill: "#171515",
+                            "collapse-hover-id": start
+                        });
+
+                        text.selectAll("tspan").forEach((tspan, i) =>{
+                            let dyc;
+                            if(i === 0){
+                                dyc = 0;
+                            }else{
+                                dyc = 16;
+                            }
+                            tspan.attr({
+                               x : box.x + box.width+10,
+                               dy: dyc
+                            });
+                        });
                         const textbox = text.getBBox();
                         const desc = svg.rect(textbox.x - 5, textbox.y-3,textbox.width+80, textbox.height+25,5,5).attr({
                             strokeWidth: 0.5,
@@ -1143,7 +1157,7 @@ $(function () {
                         if(e.key === "Enter"){
                             if(input["value"] !== ""){
                                 const newtext = input["value"];
-                                collapsedmap[childitem]["label"] = newtext;
+                                collapsedmap[start]["label"] = newtext;
                                 this.attr({
                                     text: "\""+newtext+"\"" + "("+item_counter+")",
                                     fontStyle: "italic"
@@ -2107,7 +2121,7 @@ $(function () {
         /**
          * calculates a new tree to draw for the compact view
          * @param tree current tree
-         * @param map current collapsed info map
+         * @param colmap current collapsed info map
          */
         function calculateCompactTree(tree, colmap){
             const collapsednodes = Object.keys(colmap).map(id => {
@@ -2125,7 +2139,7 @@ $(function () {
             let newtree = tree.filter(node => !removeablenodes.includes(node["id"]));
             collapsednodes.map(id => {
                const neededchange = newtree.find(i => i["id"] === id);
-               neededchange["name"] = "'"+colmap[id]["label"]+"'";
+               neededchange["name"] = "'"+colmap[neededchange["parent"]]["label"]+"'";
                neededchange["l_child"] = "";
                neededchange["r_child"] = "";
 
