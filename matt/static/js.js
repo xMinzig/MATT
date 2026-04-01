@@ -425,14 +425,28 @@ $(function () {
 
 
         // Calls the draw function with the chosen tree (with or without branch lengths)
-
-        if (typeof xhr !== "undefined" && xhr.getResponseHeader("Length")) {
-            currenttree = (trees[counter_of_trees - 1][2]);
-            draw(JSON.parse(trees[counter_of_trees - 1][2]));
-        } else {
-            currenttree = (trees[counter_of_trees - 1][1]);
-            draw(JSON.parse(trees[counter_of_trees - 1][1]));
+        if(compactmode === false) {
+            if (typeof xhr !== "undefined" && xhr.getResponseHeader("Length")) {
+                currenttree = (trees[counter_of_trees - 1][2]);
+                draw(JSON.parse(trees[counter_of_trees - 1][2]));
+            } else {
+                currenttree = (trees[counter_of_trees - 1][1]);
+                draw(JSON.parse(trees[counter_of_trees - 1][1]));
+            }
+        }else{
+            //const tempcalc = draw(data).calculateCompactTree();
+            let t;
+            if (typeof xhr !== "undefined" && xhr.getResponseHeader("Length")) {
+                currenttree = (trees[counter_of_trees - 1][2]);
+                t = draw().calculateCompactTree(JSON.parse(currenttree),collapsedmap);
+                draw(t);
+            } else {
+                currenttree = (trees[counter_of_trees - 1][1]);
+                t = draw().calculateCompactTree(JSON.parse(currenttree),collapsedmap);
+                draw(t);
+            }
         }
+
     }
 
     /**
@@ -683,6 +697,8 @@ $(function () {
                 };
             });
         }
+        if(typeof data === "undefined") return { calculateCompactTree: calculateCompactTree };
+
 
 
 
@@ -949,6 +965,31 @@ $(function () {
             }
             return children.filter(elements => elements);
         }
+
+        /**
+         * Gets subtree of a givin node
+         * @param start clicked node
+         * @returns {*[]} Subtreelist with ids of the subnodes
+         */
+        function getTreeCompact(start, source = data){
+            const children = [];
+            const stack = [start]
+
+            while(stack.length > 0){
+                const a = stack.pop();
+                const node = source.find(n => n["id"] === a);
+                if(node == null) continue;
+                ["l_child","r_child"].forEach(child => {
+                    const childid = node[child];
+                    if(childid !== undefined && childid !== null){
+                        children.push(childid);
+                        stack.push(childid);
+                    }
+                });
+            }
+            return children.filter(elements => elements);
+        }
+
 
 
 
@@ -2132,7 +2173,7 @@ $(function () {
             }).flat();
 
             const removeablenodes = collapsednodes.map(id => {
-               return getTree(id);
+               return getTreeCompact(id, tree);
             }).flat();
 
             let newtree = tree.filter(node => !removeablenodes.includes(node["id"]));
@@ -2173,8 +2214,6 @@ $(function () {
                 $("#context-menu").removeClass("visible");
             }
         });
-
-
     }
 
 
