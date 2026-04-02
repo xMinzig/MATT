@@ -1203,7 +1203,7 @@ $(function () {
                                 const newtext = input["value"];
                                 if(label_blacklist.includes(newtext)){
                                     $("#info-modal-label").text("Warning")
-                                    $("#info-modal-body").text("Please use another name for ur label that haven't been already used.");
+                                    $("#info-modal-body").text("Please use a different name for your label that hasn't been already used.");
                                     $("#info-modal").modal("show");
                                     return;
                                 }
