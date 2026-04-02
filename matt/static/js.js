@@ -1369,8 +1369,6 @@ $(function () {
                 //Removing false leaves
                 if((r_child_check["name"] !== "None") && !collapsedmap[item["id"]]["right"]) r_edge.remove();
                 if((l_child_check["name"] !== "None") && !collapsedmap[item["id"]]["left"]) l_edge.remove();
-
-
                 // hover function in compact mode
                 if(compactmode === true) {
                     const compactlabel = Object.values(collapsedmap).some(v =>
@@ -1379,78 +1377,92 @@ $(function () {
                     );
 
                     if (compactlabel) {
-
-                        const c = Object.entries(collapsedmap).find(([id, v]) =>
-                            "'" + v["label"] + "'" === item["name"] || "'" + v["label"] + "'" === r_child_check["name"] ||
-                            "'" + v["label"] + "'" === l_child_check["name"] && (v["right_id"] || v["left_id"])
-                        );
-                        const sub = getTreeCompact(c[0],data); // TODO: FIX WRONG ID FOR SUBTREE
-                        console.log(sub);
-
-                        const item_counter = sub.filter(id => {
-                            const n = data.find(d => d["id"] === id);
-                            return n["name"] !== "None";
-                        }).length;
-
-                        const item_name_container = sub.
-                            map(id=>data.find(d => d["id"] === id)).
-                            filter(n => n["name"] !== "None").
-                            map(n => n["name"]);
-                         const preview_containing = item_name_container.slice(0,10).join(", ");
-
-
-                        const taxa = svg.select(`text[data-parent='${c[0]}']`)
-                        taxa.hover(function (){
-                            this.node.style.cursor = "pointer";
-                            this.attr({fill:"#1e90ff"});
-
-                            const box = this.getBBox();
-
-                        const previewlist = preview_containing.split(",").map(x => x.trim()).slice(0,10);
-                        let lines = [];
-                        lines.push("'"+collapsedmap[c[0]]["label"]+"' "+"contains  "+item_counter+" taxa:");
-                        lines.push(" ")
-                        previewlist.forEach(taxa => lines.push("- "+taxa));
-                        lines.push(" ");
-                        if(item_counter > 10){
-                            lines.push(" ... ( "+ (item_counter-10)+ " More )");
-                        }else{
-                            lines.push(" ... ( 0 More )");
-                        }
-                        let text = svg.text(box.x + box.width+10, box.y + box.height /2, lines).attr({
-                            fill: "#171515",
-                            "collapse-hover-id": c[0]
-                        });
-
-                        text.selectAll("tspan").forEach((tspan, i) =>{
-                            let dyc;
-                            if(i === 0){
-                                dyc = 0;
-                            }else{
-                                dyc = 16;
+                        const c = Object.entries(collapsedmap).map(([id, v]) => {
+                            if(( "'" + v["label"] + "'" === item["name"] || "'" + v["label"] + "'" === r_child_check["name"] ||
+                                "'" + v["label"] + "'" === l_child_check["name"] && v["right_id"])) {
+                               return(v["right_id"])
+                            }else if(( "'" + v["label"] + "'" === item["name"] || "'" + v["label"] + "'" === r_child_check["name"] ||
+                                "'" + v["label"] + "'" === l_child_check["name"] &&  v["left_id"])){
+                               return(v["left_id"]);
                             }
-                            tspan.attr({
-                               x : box.x + box.width+10,
-                               dy: dyc
+                            return null;
+                        }).filter(v => v !== null);
+                        let sub;
+                        let item_counter;
+                        let item_name_container;
+                        let preview_containing;
+                        let taxa;
+
+
+                        c.forEach((entry, index) => {
+                            sub = getTreeCompact(entry,JSON.parse(currenttree) );
+                            //TODO: FIX BUG WHEN 2 taxa have same name programm crashes
+
+
+                            item_counter = sub.filter(id => {
+                                const n = JSON.parse(currenttree).find(d => d["id"] === id);
+                                return (n["name"] !== "None" && n["name"] !== undefined);
+                            }).length;
+
+                            item_name_container = sub.
+                                map(id=>JSON.parse(currenttree).find(d => d["id"] === id)).
+                                filter(n => n["name"] !== "None" && n["name"] !== undefined).
+                                map(n => n["name"]);
+                            preview_containing = item_name_container.slice(0,10).join(", ");
+
+                            taxa = svg.select(`text[data-id='${entry}']`);
+                            taxa.hover(function (){
+                                this.node.style.cursor = "pointer";
+                                this.attr({fill:"#1e90ff"});
+
+                                const box = this.getBBox();
+
+                            const previewlist = preview_containing.split(",").map(x => x.trim()).slice(0,10);
+                            let lines = [];
+                            lines.push("'"+collapsedmap[entry]["label"]+"' "+"contains  "+item_counter+" taxa:");
+                            lines.push(" ")
+                            previewlist.forEach(taxa => lines.push("- "+taxa));
+                            lines.push(" ");
+                            if(item_counter > 10){
+                                lines.push(" ... ( "+ (item_counter-10)+ " More )");
+                            }else{
+                                lines.push(" ... ( 0 More )");
+                            }
+                            let text = svg.text(box.x + box.width+10, box.y + box.height /2, lines).attr({
+                                fill: "#171515",
+                                "collapse-hover-id": entry
                             });
-                        });
-                        const textbox = text.getBBox();
-                        const desc = svg.rect(textbox.x - 5, textbox.y-3,textbox.width+80, textbox.height+25,5,5).attr({
-                            strokeWidth: 0.5,
-                            fill: "#bdbdbd",
-                            stroke: "black",
-                            "collapse-hover-id": c[0]
-                        });
 
-                        g.add(desc);
-                        g.add(text);
+                            text.selectAll("tspan").forEach((tspan, i) =>{
+                                let dyc;
+                                if(i === 0){
+                                    dyc = 0;
+                                }else{
+                                    dyc = 16;
+                                }
+                                tspan.attr({
+                                    x : box.x + box.width+10,
+                                    dy: dyc
+                                });
+                            });
+                            const textbox = text.getBBox();
+                            const desc = svg.rect(textbox.x - 5, textbox.y-3,textbox.width+80, textbox.height+25,5,5).attr({
+                                strokeWidth: 0.5,
+                                fill: "#bdbdbd",
+                                stroke: "black",
+                                "collapse-hover-id": entry
+                            });
 
-                        },function (){
-                            this.node.style.cursor = "default";
-                            this.attr({fill:"#000000"});
-                            svg.selectAll(`[collapse-hover-id='${c[0]}']`).remove();
+                            g.add(desc);
+                            g.add(text);
+
+                            },function (){
+                                this.node.style.cursor = "default";
+                                this.attr({fill:"#000000"});
+                                svg.selectAll(`[collapse-hover-id='${entry}']`).remove();
+                            });
+
                         });
-
                     }
                 }
 
