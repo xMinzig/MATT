@@ -1394,7 +1394,7 @@ $(function () {
                         let taxa;
 
 
-                        c.forEach((entry, index) => {
+                        c.forEach(entry => {
                             sub = getTreeCompact(entry,JSON.parse(currenttree) );
                             //TODO: FIX BUG WHEN 2 taxa have same name programm crashes
 
@@ -1409,6 +1409,8 @@ $(function () {
                                 filter(n => n["name"] !== "None" && n["name"] !== undefined).
                                 map(n => n["name"]);
                             preview_containing = item_name_container.slice(0,10).join(", ");
+
+
 
                             taxa = svg.select(`text[data-id='${entry}']`);
                             taxa.hover(function (){
