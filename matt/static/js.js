@@ -45,6 +45,7 @@ $(function () {
     let compactmode = false;
     let currenttree;
     let counter_of_nodes = []
+    let label_blacklist = [];
 
     // Gets the options initially
     getOptions();
@@ -691,11 +692,13 @@ $(function () {
 
         //const collapsedmap = {};
         if(Object.keys(collapsedmap).length === 0){
-            data.forEach(n => {
-            collapsedmap[n["id"]] = {left: false, right: false, left_id: null, right_id: null, label: "Collapsed",
+            data.forEach((n, index) => {
+            collapsedmap[n["id"]] = {left: false, right: false, left_id: null, right_id: null, label: "Collapsed"+index,
                 "collapsed-line-Y":null,
                 };
+            label_blacklist.push(collapsedmap[n["id"]]["label"]);
             });
+
         }
         if(typeof data === "undefined") return { calculateCompactTree: calculateCompactTree };
 
@@ -1177,7 +1180,7 @@ $(function () {
                 );
 
                 //UPDATE NAMETAG IF NAME CHANGED
-                nameText.click(function () {
+                nameText.click(function () { //TODO: IMPLEMENT FUNCTION SO 2 collapsed tress cannot have same label.
                     const box = this.getBBox();
                     const ctm = this.node.getScreenCTM();
                     const point = svg.node.createSVGPoint();
@@ -1198,6 +1201,12 @@ $(function () {
                         if(e.key === "Enter"){
                             if(input["value"] !== ""){
                                 const newtext = input["value"];
+                                if(label_blacklist.includes(newtext)){
+                                    $("#info-modal-label").text("Warning")
+                                    $("#info-modal-body").text("Please use another name for ur label that haven't been already used.");
+                                    $("#info-modal").modal("show");
+                                    return;
+                                }
                                 collapsedmap[start]["label"] = newtext;
                                 this.attr({
                                     text: "\""+newtext+"\"" + "("+item_counter+")",
@@ -1387,17 +1396,15 @@ $(function () {
                             }
                             return null;
                         }).filter(v => v !== null);
+
                         let sub;
                         let item_counter;
                         let item_name_container;
                         let preview_containing;
                         let taxa;
 
-
                         c.forEach(entry => {
                             sub = getTreeCompact(entry,JSON.parse(currenttree) );
-                            //TODO: FIX BUG WHEN 2 taxa have same name programm crashes
-
 
                             item_counter = sub.filter(id => {
                                 const n = JSON.parse(currenttree).find(d => d["id"] === id);
