@@ -1232,6 +1232,7 @@ $(function () {
                         dominantBaseline: 'middle',
                         fontSize: fontSize,
                         'data-id': item["id"],
+                        'data-parent': item["parent"],
                         textAnchor: 'end'
                     });
                     g.add(nameText);
@@ -1241,7 +1242,8 @@ $(function () {
                             stroke: 'black',
                             strokeWidth: 2,
                             strokeDasharray: 4,
-                            "data-id": item["id"]
+                            "data-id": item["id"],
+                            'data-parent': item["parent"]
                         }));
                     }
                 // Draw next to the leaf without a dashed line
@@ -1249,7 +1251,8 @@ $(function () {
                     nameText = svg.text(item["total_length"] * scaleX + (1.5 * offset), (index + 1) * scaleY, item["name"]).attr({
                         dominantBaseline: 'middle',
                         fontSize: fontSize,
-                        'data-id': item["id"]
+                        'data-id': item["id"],
+                        'data-parent': item["parent"]
                     });
                     g.add(nameText);
                 }
@@ -1263,7 +1266,8 @@ $(function () {
                     g.add(svg.text((parseFloat(array[parent]["total_length"]) + (item["length"] / 2)) * scaleX, (index + 1) * scaleY, item["bootstrap"]).attr({
                         dominantBaseline: 'baseline',
                         fontSize: 0.5 * fontSize,
-                        'data-id': item["id"]
+                        'data-id': item["id"],
+                        'data-parent': item["parent"]
                     }));
                     // TODO data-id added graying out of child bootstraps but not selected bootstrap
                 }
@@ -1365,6 +1369,91 @@ $(function () {
                 //Removing false leaves
                 if((r_child_check["name"] !== "None") && !collapsedmap[item["id"]]["right"]) r_edge.remove();
                 if((l_child_check["name"] !== "None") && !collapsedmap[item["id"]]["left"]) l_edge.remove();
+
+
+                // hover function in compact mode
+                if(compactmode === true) {
+                    const compactlabel = Object.values(collapsedmap).some(v =>
+                        ("'" + v["label"] + "'" === item["name"] || "'" + v["label"] + "'" === r_child_check["name"] ||
+                        "'" + v["label"] + "'" === l_child_check["name"]) && (v["right_id"] || v["left_id"])
+                    );
+
+                    if (compactlabel) {
+
+                        const c = Object.entries(collapsedmap).find(([id, v]) =>
+                            "'" + v["label"] + "'" === item["name"] || "'" + v["label"] + "'" === r_child_check["name"] ||
+                            "'" + v["label"] + "'" === l_child_check["name"] && (v["right_id"] || v["left_id"])
+                        );
+                        const sub = getTreeCompact(c[0],data); // TODO: FIX WRONG ID FOR SUBTREE
+                        console.log(sub);
+
+                        const item_counter = sub.filter(id => {
+                            const n = data.find(d => d["id"] === id);
+                            return n["name"] !== "None";
+                        }).length;
+
+                        const item_name_container = sub.
+                            map(id=>data.find(d => d["id"] === id)).
+                            filter(n => n["name"] !== "None").
+                            map(n => n["name"]);
+                         const preview_containing = item_name_container.slice(0,10).join(", ");
+
+
+                        const taxa = svg.select(`text[data-parent='${c[0]}']`)
+                        taxa.hover(function (){
+                            this.node.style.cursor = "pointer";
+                            this.attr({fill:"#1e90ff"});
+
+                            const box = this.getBBox();
+
+                        const previewlist = preview_containing.split(",").map(x => x.trim()).slice(0,10);
+                        let lines = [];
+                        lines.push("'"+collapsedmap[c[0]]["label"]+"' "+"contains  "+item_counter+" taxa:");
+                        lines.push(" ")
+                        previewlist.forEach(taxa => lines.push("- "+taxa));
+                        lines.push(" ");
+                        if(item_counter > 10){
+                            lines.push(" ... ( "+ (item_counter-10)+ " More )");
+                        }else{
+                            lines.push(" ... ( 0 More )");
+                        }
+                        let text = svg.text(box.x + box.width+10, box.y + box.height /2, lines).attr({
+                            fill: "#171515",
+                            "collapse-hover-id": c[0]
+                        });
+
+                        text.selectAll("tspan").forEach((tspan, i) =>{
+                            let dyc;
+                            if(i === 0){
+                                dyc = 0;
+                            }else{
+                                dyc = 16;
+                            }
+                            tspan.attr({
+                               x : box.x + box.width+10,
+                               dy: dyc
+                            });
+                        });
+                        const textbox = text.getBBox();
+                        const desc = svg.rect(textbox.x - 5, textbox.y-3,textbox.width+80, textbox.height+25,5,5).attr({
+                            strokeWidth: 0.5,
+                            fill: "#bdbdbd",
+                            stroke: "black",
+                            "collapse-hover-id": c[0]
+                        });
+
+                        g.add(desc);
+                        g.add(text);
+
+                        },function (){
+                            this.node.style.cursor = "default";
+                            this.attr({fill:"#000000"});
+                            svg.selectAll(`[collapse-hover-id='${c[0]}']`).remove();
+                        });
+
+                    }
+                }
+
 
 
                 // Repeat almost everything for the minimap
