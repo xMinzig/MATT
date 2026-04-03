@@ -1178,7 +1178,6 @@ $(function () {
                         svg.selectAll(`[collapse-hover-id='${start}']`).remove();
                     }
                 );
-
                 //UPDATE NAMETAG IF NAME CHANGED
                 nameText.click(function () { //TODO: IMPLEMENT FUNCTION SO 2 collapsed tress cannot have same label.
                     const box = this.getBBox();
@@ -1207,7 +1206,11 @@ $(function () {
                                     $("#info-modal").modal("show");
                                     return;
                                 }
+
+                                label_blacklist.push(newtext);
+                                label_blacklist = label_blacklist.filter(x=> x !== collapsedmap[start]["label"]);
                                 collapsedmap[start]["label"] = newtext;
+
                                 this.attr({
                                     text: "\""+newtext+"\"" + "("+item_counter+")",
                                     fontStyle: "italic"
@@ -1402,7 +1405,6 @@ $(function () {
                         let item_name_container;
                         let preview_containing;
                         let taxa;
-
                         c.forEach(entry => {
                             sub = getTreeCompact(entry,JSON.parse(currenttree) );
 
@@ -1428,7 +1430,8 @@ $(function () {
 
                             const previewlist = preview_containing.split(",").map(x => x.trim()).slice(0,10);
                             let lines = [];
-                            lines.push("'"+collapsedmap[entry]["label"]+"' "+"contains  "+item_counter+" taxa:");
+                            const temp = JSON.parse(currenttree).find(d => d["id"] === entry);
+                            lines.push("'"+collapsedmap[temp["parent"]]["label"]+"' "+"contains  "+item_counter+" taxa:");
                             lines.push(" ")
                             previewlist.forEach(taxa => lines.push("- "+taxa));
                             lines.push(" ");
