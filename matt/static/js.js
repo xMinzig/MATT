@@ -2138,10 +2138,18 @@ $(function () {
          */
         function search(value) {
             // Different x coordinate depending on whether branch lengths are shown
-            if (!(enableLengths)) {
-                data = JSON.parse(trees[counter_of_trees - 1][1]);
-            } else {
-                data = JSON.parse(trees[counter_of_trees - 1][2]);
+            if(compactmode === false) {
+                if (!(enableLengths)) {
+                    data = JSON.parse(trees[counter_of_trees - 1][1]);
+                } else {
+                    data = JSON.parse(trees[counter_of_trees - 1][2]);
+                }
+            }else{
+                if (!(enableLengths)) {
+                    data = calculateCompactTree(JSON.parse(currenttree), collapsedmap);
+                } else {
+                    data = calculateCompactTree(JSON.parse(currenttree), collapsedmap);
+                }
             }
             data.forEach(function(item, index, array) {
                 // Searches through the all texts, colors all and jumps to the last match
