@@ -1390,11 +1390,11 @@ $(function () {
 
                     if (compactlabel) {
                         const c = Object.entries(collapsedmap).map(([id, v]) => {
-                            if(( "'" + v["label"] + "'" === item["name"] || "'" + v["label"] + "'" === r_child_check["name"] ||
-                                "'" + v["label"] + "'" === l_child_check["name"] && v["right_id"])) {
+                            if((( "'" + v["label"] + "'" === item["name"] || "'" + v["label"] + "'" === r_child_check["name"] ||
+                                "'" + v["label"] + "'" === l_child_check["name"]) && v["right_id"])) {
                                return(v["right_id"])
-                            }else if(( "'" + v["label"] + "'" === item["name"] || "'" + v["label"] + "'" === r_child_check["name"] ||
-                                "'" + v["label"] + "'" === l_child_check["name"] &&  v["left_id"])){
+                            }else if((( "'" + v["label"] + "'" === item["name"] || "'" + v["label"] + "'" === r_child_check["name"] ||
+                                "'" + v["label"] + "'" === l_child_check["name"]) &&  v["left_id"])){
                                return(v["left_id"]);
                             }
                             return null;
@@ -1405,9 +1405,10 @@ $(function () {
                         let item_name_container;
                         let preview_containing;
                         let taxa;
-                        c.forEach(entry => {
+                        console.log(c)
+                        console.log(collapsedmap)
+                        c.forEach(entry => { //TODO: FIX EMPTY TAXA BUG
                             sub = getTreeCompact(entry,JSON.parse(currenttree) );
-
                             item_counter = sub.filter(id => {
                                 const n = JSON.parse(currenttree).find(d => d["id"] === id);
                                 return (n["name"] !== "None" && n["name"] !== undefined);
@@ -1676,11 +1677,6 @@ $(function () {
             const node = data.find(d => d["id"] === id);
             if (node === null) return;
 
-            collapsedmap[id]["l-d"] = null;
-            collapsedmap[id]["r-d"] = null;
-            collapsedmap[id]["l_edge-Y"] = null;
-            collapsedmap[id]["r_edge-Y"] = null;
-            collapsedmap[id]["collapsed-line-Y"] = null;
 
             //SIDE SWAP CHECK IF STATEMENTS AFTER BRANCH SWAP
             if (collapsedmap[id]["right"] && collapsedmap[id]["right_id"] !== null) {
@@ -2305,6 +2301,7 @@ $(function () {
                neededchange["r_child"] = "";
 
             });
+            console.log(newtree)
             return newtree;
         }
 
