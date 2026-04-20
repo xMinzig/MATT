@@ -1106,7 +1106,7 @@ $(function () {
             let nameText = null;
 
             if(collapsed_check){
-                nameText = svg.text(maxX - offset,  circle.attr("data-v"), "'"+collapsedmap[start]["label"]+"'"+ " (" + item_counter+ ")").attr({
+                nameText = svg.text(maxX - offset,  circle.attr("data-v"), "'"+collapsedmap[childitem]["label"]+"'"+ " (" + item_counter+ ")").attr({
                     dominantBaseline: 'middle',
                     fontSize: fontSize,
                     fill: "black",
@@ -1134,7 +1134,7 @@ $(function () {
 
                         const previewlist = preview_containing.split(",").map(x => x.trim()).slice(0,10);
                         let lines = [];
-                        lines.push("'"+collapsedmap[start]["label"]+"' "+"contains  "+item_counter+" taxa:");
+                        lines.push("'"+collapsedmap[childitem]["label"]+"' "+"contains  "+item_counter+" taxa:");
                         lines.push(" ")
                         previewlist.forEach(taxa => lines.push("- "+taxa));
                         lines.push(" ");
@@ -1659,63 +1659,39 @@ $(function () {
         });
     }
 
-    if(compactmode === true) { //TODO: FIX WRONG ID OVERRIDE AT COMPACT CALCULATION.
-        data.forEach(function (item, index, array) {
-            const r_child_check = data.find(d => d["id"] === item["r_child"]);
-            const l_child_check = data.find(d => d["id"] === item["l_child"]);
-
-            let right;
-            let left;
-            if(r_child_check){
-                right = r_child_check["name"];
-            }else{
-                right = "None";
-            }
-            if(l_child_check){
-                left = l_child_check["name"];
-            }else{
-                left = "None"
-            }
-
+    if(compactmode === true) {
+        data.forEach(function (item) {
              const compactlabel = Object.values(collapsedmap).some(v =>
-                ("'" + v["label"] + "'" === item["name"] || "'" + v["label"] + "'" === right ||
-                    "'" + v["label"] + "'" === left) && (v["right_id"] || v["left_id"])
-        );
+                ("'" + v["label"] + "'" === item["name"])
+             );
 
-        if (compactlabel) {
-            const c = Object.entries(collapsedmap).map(([id, v]) => {
-                if(( "'" +v["label"] + "'" === right
-                    && r_child_check["name"] !== "None" && v["right_id"])) {
-                    return(v["right_id"]);
-                }else if((
-                    "'" + v["label"] + "'" === left && l_child_check["name"] !== "None" &&  v["left_id"])){
-                    return(v["left_id"]);
-                }
-                return null;
-            }).filter(v => v !== null);
+            if (compactlabel) {
+                const c = Object.entries(collapsedmap).map(([id, v]) => {
+                    if((v["left_id"]!== null)){
+                        return v["left_id"];
+                    }
+                    if((v["right_id"]!== null)) {
+                        return v["right_id"];
+                    }
+                    return undefined;
+                }).filter(v => (v !== undefined));
 
-             let sub;
-             let item_counter;
-             let item_name_container;
-             let preview_containing;
-             let taxa;
-             console.log(c)
-             console.log(collapsedmap)
-             c.forEach(entry => { //TODO: FIX EMPTY TAXA BUG
-                 sub = getTreeCompact(entry,JSON.parse(currenttree) );
-                 item_counter = sub.filter(id => {
+
+             c.forEach(entry => {
+                 const sub = getTreeCompact(entry,JSON.parse(currenttree));
+                 const item_counter = sub.filter(id => {
                      const n = JSON.parse(currenttree).find(d => d["id"] === id);
                      return (n["name"] !== "None" && n["name"] !== undefined);
                  }).length;
 
-                 item_name_container = sub.
+                 const item_name_container = sub.
                      map(id=>JSON.parse(currenttree).find(d => d["id"] === id)).
                      filter(n => n["name"] !== "None" && n["name"] !== undefined).
                      map(n => n["name"]);
-                 preview_containing = item_name_container.slice(0,10).join(", ");
+                 const preview_containing = item_name_container.slice(0,10).join(", ");
 
 
-                 taxa = svg.select(`text[data-id='${entry}']`);
+                 const taxa = svg.select(`text[data-id='${entry}']`);
                  taxa.hover(function (){
                      this.node.style.cursor = "pointer";
                      this.attr({fill:"#1e90ff"});
@@ -1725,7 +1701,7 @@ $(function () {
                  const previewlist = preview_containing.split(",").map(x => x.trim()).slice(0,10);
                  let lines = [];
                  const temp = JSON.parse(currenttree).find(d => d["id"] === entry);
-                 lines.push("'"+collapsedmap[temp["parent"]]["label"]+"' "+"contains  "+item_counter+" taxa:");
+                 lines.push("'"+collapsedmap[temp["id"]]["label"]+"' "+"contains  "+item_counter+" taxa:");
                  lines.push(" ")
                  previewlist.forEach(taxa => lines.push("- "+taxa));
                  lines.push(" ");
@@ -2315,12 +2291,11 @@ $(function () {
             let newtree = tree.filter(node => !removeablenodes.includes(node["id"]));
             collapsednodes.map(id => {
                const neededchange = newtree.find(i => i["id"] === id);
-               neededchange["name"] = "'"+colmap[neededchange["parent"]]["label"]+"'";
+               neededchange["name"] = "'"+colmap[neededchange["id"]]["label"]+"'";
                neededchange["l_child"] = "";
                neededchange["r_child"] = "";
 
             });
-            console.log(newtree)
             return newtree;
         }
 
