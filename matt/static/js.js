@@ -1178,8 +1178,7 @@ $(function () {
                         svg.selectAll(`[collapse-hover-id='${start}']`).remove();
                     }
                 );
-                //UPDATE NAMETAG IF NAME CHANGED
-                nameText.click(function () { //TODO: IMPLEMENT FUNCTION SO 2 collapsed tress cannot have same label.
+                nameText.click(function () {
                     const box = this.getBBox();
                     const ctm = this.node.getScreenCTM();
                     const point = svg.node.createSVGPoint();
@@ -1208,8 +1207,8 @@ $(function () {
                                 }
 
                                 label_blacklist.push(newtext);
-                                label_blacklist = label_blacklist.filter(x=> x !== collapsedmap[start]["label"]);
-                                collapsedmap[start]["label"] = newtext;
+                                label_blacklist = label_blacklist.filter(x=> x !== collapsedmap[childitem]["label"]);
+                                collapsedmap[childitem]["label"] = newtext;
 
                                 this.attr({
                                     text: "\""+newtext+"\"" + "("+item_counter+")",
