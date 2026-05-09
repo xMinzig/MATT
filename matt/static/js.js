@@ -1134,7 +1134,7 @@ $(function () {
 
                         const previewlist = preview_containing.split(",").map(x => x.trim()).slice(0,10);
                         let lines = [];
-                        lines.push("'"+collapsedmap[childitem]["label"]+"' "+"contains  "+item_counter+" taxa:");
+                        lines.push("This taxa "+"contains  "+item_counter+" taxa:");
                         lines.push(" ")
                         previewlist.forEach(taxa => lines.push("- "+taxa));
                         lines.push(" ");
@@ -1674,7 +1674,7 @@ $(function () {
                     }
                     return undefined;
                 }).filter(v => (v !== undefined));
-
+                console.log(c)
 
              c.forEach(entry => {
                  const sub = getTreeCompact(entry,JSON.parse(currenttree));
@@ -1699,8 +1699,7 @@ $(function () {
 
                  const previewlist = preview_containing.split(",").map(x => x.trim()).slice(0,10);
                  let lines = [];
-                 const temp = JSON.parse(currenttree).find(d => d["id"] === entry);
-                 lines.push("'"+collapsedmap[temp["id"]]["label"]+"' "+"contains  "+item_counter+" taxa:");
+                 lines.push("This taxa "+"contains  "+item_counter+" taxa:");
                  lines.push(" ")
                  previewlist.forEach(taxa => lines.push("- "+taxa));
                  lines.push(" ");
