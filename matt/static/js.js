@@ -1134,7 +1134,7 @@ $(function () {
 
                         const previewlist = preview_containing.split(",").map(x => x.trim()).slice(0,10);
                         let lines = [];
-                        lines.push("This taxa "+"contains  "+item_counter+" taxa:");
+                        lines.push("This collapsed taxa "+"contains  "+item_counter+" taxa:");
                         lines.push(" ")
                         previewlist.forEach(taxa => lines.push("- "+taxa));
                         lines.push(" ");
@@ -1691,6 +1691,7 @@ $(function () {
 
 
                  const taxa = svg.select(`text[data-id='${entry}']`);
+                 if(taxa === null) return;
                  taxa.hover(function (){
                      this.node.style.cursor = "pointer";
                      this.attr({fill:"#1e90ff"});
@@ -1699,7 +1700,7 @@ $(function () {
 
                  const previewlist = preview_containing.split(",").map(x => x.trim()).slice(0,10);
                  let lines = [];
-                 lines.push("This taxa "+"contains  "+item_counter+" taxa:");
+                 lines.push("This collapsed taxa "+"contains  "+item_counter+" taxa:");
                  lines.push(" ")
                  previewlist.forEach(taxa => lines.push("- "+taxa));
                  lines.push(" ");
