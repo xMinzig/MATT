@@ -153,7 +153,7 @@ def download(tree_id):
         file_without.write(tree_without + "\n")
         file_without.close()
 
-        tree_with = Tree(tree_lengths_json).to_newick()
+        tree_with = Tree(tree_lengths_json, enable_lengths=True).to_newick()
         path_with = os.path.join(session["working-directory"],
                                  (session["session-name"] + "_" if session["session-name"] else "") + "with_lengths.tree")
         file_with = open(path_with, "w")
