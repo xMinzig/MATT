@@ -503,7 +503,7 @@ $(function () {
         if (snapshotTrees.find(element => element[0] == trees[counter_of_trees - 1][0])) {
             // Shows the info modal
             $("#info-modal-label").text("This snapshot already exists!")
-            $("#info-modal-body").text("This tree has already been snapshot.")
+            $("#info-modal-body").text("You already froze this tree topology.")
             $("#info-modal").modal("show");
             return;
         }
@@ -1976,7 +1976,7 @@ $(function () {
                     if (snapshotTrees.find(element => element[0] == trees[counter_of_trees - 1][0])) {
                         // Shows the info modal
                         $("#info-modal-label").text("This snapshot already exists!")
-                        $("#info-modal-body").text("This tree has already been snapshot.")
+                        $("#info-modal-body").text("You already froze this tree topology.")
                         $("#info-modal").modal("show");
                         return;
                     }
@@ -1993,7 +1993,7 @@ $(function () {
                     if (snapshotTrees.find(element => element[0] == trees[counter_of_trees - 1][0])) {
                         // Shows the info modal
                         $("#info-modal-label").text("This snapshot already exists!")
-                        $("#info-modal-body").text("This tree has already been snapshot.")
+                        $("#info-modal-body").text("You already froze this tree topology.")
                         $("#info-modal").modal("show");
                         return;
                     }
