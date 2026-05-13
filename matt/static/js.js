@@ -1040,6 +1040,7 @@ $(function () {
 
             // COLAPSE
             if(collapsed_check){
+                if(compactmode === true && (collapsedmap[start]["left_id"] || collapsedmap[start]["right_id"])) return;
                 svg.selectAll(`circle[data-id='${childitem}']`).attr({display: "none"});
                 minimap.selectAll(`path[data-id='${childitem}']`).attr({display: "none"});
                 sub.forEach(child => {
@@ -1058,6 +1059,7 @@ $(function () {
 
             //EXPAND
             }else{
+                if(compactmode === true && (collapsedmap[start]["left_id"] || collapsedmap[start]["right_id"])) return;
                 svg.selectAll(`circle[data-id='${childitem}']`).attr({display: "inline"});
                 minimap.selectAll(`path[data-id='${childitem}']`).attr({display: "inline"});
                 sub.forEach(child => {
@@ -1067,8 +1069,7 @@ $(function () {
                     counter_of_nodes = counter_of_nodes.filter(x=> x !== child);
                 });
 
-
-
+                
                 draw_collapsed_line(childitem, start, collapsed_check, direct);
                 if((counter_of_nodes.length > 0))  {
                     $("#compact-button").prop("disabled", false);
