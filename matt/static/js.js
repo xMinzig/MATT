@@ -42,6 +42,7 @@ $(function () {
     let enableLengths;
     let alignLabels = true;
     let collapsedmap = {};
+    let compactlist = [];
     let compactmode = false;
     let currenttree;
     let counter_of_nodes = []
@@ -1040,7 +1041,6 @@ $(function () {
 
             // COLAPSE
             if(collapsed_check){
-                if(compactmode === true && (collapsedmap[start]["left_id"] || collapsedmap[start]["right_id"])) return;
                 svg.selectAll(`circle[data-id='${childitem}']`).attr({display: "none"});
                 minimap.selectAll(`path[data-id='${childitem}']`).attr({display: "none"});
                 sub.forEach(child => {
@@ -1059,7 +1059,6 @@ $(function () {
 
             //EXPAND
             }else{
-                if(compactmode === true && (collapsedmap[start]["left_id"] || collapsedmap[start]["right_id"])) return;
                 svg.selectAll(`circle[data-id='${childitem}']`).attr({display: "inline"});
                 minimap.selectAll(`path[data-id='${childitem}']`).attr({display: "inline"});
                 sub.forEach(child => {
@@ -1361,6 +1360,8 @@ $(function () {
 
 
                 r_edge.click(function(){
+                    const check = compactlist.find(n => n === item["r_child"]);
+                    if(compactmode === true && (check !== undefined)) return;
                     document.querySelectorAll(".svg-edit-input").forEach(e => e.remove());
                     collapsedmap[item["id"]]["collapsed-line-Y"] = r_edge.attr("data-v");
                     collapse(item["r_child"],item["id"], !collapsedmap[item["id"]]["right"], "right");
@@ -1369,6 +1370,8 @@ $(function () {
 
                 });
                 l_edge.click(function(){
+                    const check = compactlist.find(n => n === item["l_child"]);
+                    if(compactmode === true && (check !== undefined)) return;
                     document.querySelectorAll(".svg-edit-input").forEach(e => e.remove());
                     collapsedmap[item["id"]]["collapsed-line-Y"] = l_edge.attr("data-v");
                     collapse(item["l_child"],item["id"], !collapsedmap[item["id"]]["left"], "left");
@@ -1675,7 +1678,7 @@ $(function () {
                     }
                     return undefined;
                 }).filter(v => (v !== undefined));
-                console.log(c)
+
 
              c.forEach(entry => {
                  const sub = getTreeCompact(entry,JSON.parse(currenttree));
@@ -2287,6 +2290,7 @@ $(function () {
             const removeablenodes = collapsednodes.map(id => {
                return getTreeCompact(id, tree);
             }).flat();
+            compactlist = collapsednodes;
 
             let newtree = tree.filter(node => !removeablenodes.includes(node["id"]));
             collapsednodes.map(id => {
