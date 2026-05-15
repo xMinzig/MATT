@@ -1337,6 +1337,19 @@ $(function () {
                     "data-direct": "left",
                 });
 
+                if(compactmode === true){
+                    if((collapsedmap[item["id"]] && collapsedmap[item["id"]]["right_id"] === item["r_child"])){
+                        r_edge.attr({display: "none"});
+                    }else{
+                        r_edge.attr({display: "inline"});
+                    }
+                    if((collapsedmap[item["id"]] && collapsedmap[item["id"]]["left_id"] === item["l_child"])){
+                        l_edge.attr({display: "none"});
+                    }else{
+                        l_edge.attr({display: "inline"});
+                    }
+                }
+
                 l_edge.hover(
                     function () {
                         this.node.style.cursor = "pointer";
@@ -1382,9 +1395,8 @@ $(function () {
                 g.add(r_edge, l_edge);
 
                 //Removing false leaves
-                if((r_child_check["name"] !== "None") && !collapsedmap[item["id"]]["right"]) r_edge.remove();
-                if((l_child_check["name"] !== "None") && !collapsedmap[item["id"]]["left"]) l_edge.remove();
-                // hover function in compact mode
+                if((r_child_check["name"] !== "None")) r_edge.remove();
+                if((l_child_check["name"] !== "None")) l_edge.remove();
 
 
 
@@ -1583,7 +1595,7 @@ $(function () {
         Object.keys(collapsedmap).forEach(id => {
             document.querySelectorAll(".svg-edit-input").forEach(e => e.remove());
             const node = data.find(d => d["id"] === id);
-            if (node === null) return;
+            if (node === undefined) return;
 
 
             //SIDE SWAP CHECK IF STATEMENTS AFTER BRANCH SWAP
@@ -1631,7 +1643,6 @@ $(function () {
                         const children_path = svg.select(`path[data-id='${leftpath_id}']`);
                         collapsedmap[children]["l-d"] = children_path.attr("d");
                     }
-
                 });
             }
             if (collapsedmap[id]["left"] && collapsedmap[id]["left_id"]) {
