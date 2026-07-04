@@ -101,4 +101,4 @@ Any bug reports, comments and suggestions are highly appreciated. Please
 An Application Note is in the works. Stay tuned.
 
 # Contact
-For further support or bug reports please contact us via [email](mailto:jeffgower98@gmail.com) or [email](mailto:faflow456456@gmail.com).
+For further support or bug reports please contact us via [email-Jeff](mailto:jeffgower98@gmail.com) or [email-Adrian](mailto:faflow456456@gmail.com).
