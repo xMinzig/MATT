@@ -701,6 +701,7 @@ $(function () {
             });
 
         }
+        //TODO: Rework this. It works but not really smooth.
         if(typeof data === "undefined") return { calculateCompactTree: calculateCompactTree };
 
 
